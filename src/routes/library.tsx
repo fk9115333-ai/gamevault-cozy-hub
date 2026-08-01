@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useCurrentData, type GameEntry, type Status } from "@/lib/store";
-import { GameCard } from "@/components/GameCard";
+
 import { GameEditDialog } from "@/components/GameEditDialog";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { EmptyState, SectionTitle } from "@/components/ui-bits";
@@ -11,6 +11,7 @@ import { Pencil, Star } from "lucide-react";
 import { num } from "@/lib/dates";
 import { computeFranchises } from "@/lib/stats";
 import { completionSummary } from "@/lib/completion";
+import { Rail, RailCard, TrophyRailCard } from "@/components/Rail";
 
 /** بطاقة لعبة مختومة — غرفة الإنجازات */
 function CompletedCard({ entry, onOpen }: { entry: GameEntry; onOpen: () => void }) {
@@ -108,6 +109,18 @@ function LibraryPage() {
 
   const franchises = useMemo(() => computeFranchises(data.entries), [data.entries]);
 
+  const rails = useMemo(() => {
+    const by = (s: Status) => data.entries.filter((e) => e.status === s);
+    return {
+      current: by("current"),
+      backlog: by("backlog"),
+      hype: by("hype"),
+      completed: by("completed").sort((a, b) =>
+        (b.completedAt ?? "").localeCompare(a.completedAt ?? ""),
+      ),
+    };
+  }, [data.entries]);
+
   return (
     <div className="space-y-10">
       <CelebrationModal game={celebrated} onClose={() => setCelebrated(null)} />
@@ -170,27 +183,43 @@ function LibraryPage() {
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-              {list.map((e, i) => (
-                <div key={e.id} className="relative">
-                  <GameCard entry={e} index={i} />
-                  <GameEditDialog
-                    entry={e}
-                    onCompleted={(done) => setCelebrated(done)}
-                    trigger={
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="absolute left-3 top-14 size-9 rounded-full"
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                    }
-                  />
-                </div>
-              ))}
+          ) : tab === "all" ? (
+            <div className="space-y-8">
+              {!!rails.current.length && (
+                <Rail title="مواصلة اللعب" subtitle="ألعابك النشطة">
+                  {rails.current.map((e, i) => (
+                    <RailCard key={e.id} entry={e} index={i} vip />
+                  ))}
+                </Rail>
+              )}
+              {!!rails.backlog.length && (
+                <Rail title="ناوي أختمها" subtitle="قائمة الانتظار">
+                  {rails.backlog.map((e, i) => (
+                    <RailCard key={e.id} entry={e} index={i} />
+                  ))}
+                </Rail>
+              )}
+              {!!rails.hype.length && (
+                <Rail title="المرتقبة" subtitle="إصدارات قادمة">
+                  {rails.hype.map((e, i) => (
+                    <RailCard key={e.id} entry={e} index={i} />
+                  ))}
+                </Rail>
+              )}
+              {!!rails.completed.length && (
+                <Rail title="قاعة الألعاب المكتملة" subtitle="إنجازاتك">
+                  {rails.completed.map((e, i) => (
+                    <TrophyRailCard key={e.id} entry={e} index={i} onOpen={() => setReviewed(e)} />
+                  ))}
+                </Rail>
+              )}
             </div>
+          ) : (
+            <Rail title="قيد اللعب" subtitle={`${num(list.length)} لعبة`}>
+              {list.map((e, i) => (
+                <RailCard key={e.id} entry={e} index={i} vip />
+              ))}
+            </Rail>
           )
         ) : (
 

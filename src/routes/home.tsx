@@ -12,14 +12,16 @@ import {
   Plus,
   Swords,
 } from "lucide-react";
-import { useCurrentData, useOtherData, useStore } from "@/lib/store";
+import { useCurrentData, useOtherData, useStore, type GameEntry } from "@/lib/store";
 import { activityIcon, gameOfMonth, memoryBox, computeStats, computeLevel } from "@/lib/stats";
 import { hijri, num } from "@/lib/dates";
 import { SectionTitle } from "@/components/ui-bits";
 import { LogSessionSheet } from "@/components/GameEditDialog";
+import { Rail, RailCard, TrophyRailCard } from "@/components/Rail";
+import { CelebrationModal } from "@/components/CelebrationModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -61,6 +63,16 @@ function Dashboard() {
   const currentUser = useStore((s) => s.currentUser);
 
   const hero = data.entries.find((e) => e.status === "current") ?? null;
+  const [reviewed, setReviewed] = useState<GameEntry | null>(null);
+  const playing = useMemo(() => data.entries.filter((e) => e.status === "current"), [data.entries]);
+  const backlog = useMemo(() => data.entries.filter((e) => e.status === "backlog"), [data.entries]);
+  const completed = useMemo(
+    () =>
+      data.entries
+        .filter((e) => e.status === "completed")
+        .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? "")),
+    [data.entries],
+  );
   const gotm = gameOfMonth(data.entries);
   const memories = memoryBox(data.entries);
   const stats = computeStats(data.entries);
@@ -164,7 +176,8 @@ function Dashboard() {
               <LogSessionSheet
                 entry={hero}
                 trigger={
-                  <Button className="w-fit rounded-2xl bg-[var(--gradient-primary)] text-primary-foreground shadow-[0_0_25px_-6px_rgba(234,179,8,0.6)]">
+                  <Button className="h-12 w-fit rounded-2xl border-2 border-yellow-300/70 bg-primary px-6 font-display text-base font-black text-primary-foreground shadow-[0_0_35px_-4px_rgba(234,179,8,0.95)] hover:bg-primary/90">
+
                     <PlayCircle className="size-4" /> تسجيل جلسة
                   </Button>
                 }
@@ -184,6 +197,77 @@ function Dashboard() {
           )}
         </div>
       </motion.section>
+
+      {/* صفوف سينمائية أفقية */}
+      <CelebrationModal game={reviewed} review onClose={() => setReviewed(null)} />
+
+      {!!playing.length && (
+        <Rail
+          title="مواصلة اللعب"
+          subtitle="ألعابك النشطة الآن"
+          action={
+            <Link to="/library" className="text-xs text-primary">
+              الكل
+            </Link>
+          }
+        >
+          {playing.map((e, i) => (
+            <RailCard
+              key={e.id}
+              entry={e}
+              index={i}
+              vip
+              action={
+                <LogSessionSheet
+                  entry={e}
+                  trigger={
+                    <Button
+                      size="sm"
+                      className="w-full rounded-xl border-2 border-yellow-300/70 bg-primary font-bold text-primary-foreground shadow-[0_0_25px_-8px_rgba(234,179,8,0.9)] hover:bg-primary/90"
+                    >
+                      <PlayCircle className="size-4" /> تسجيل الجلسة
+                    </Button>
+                  }
+                />
+              }
+            />
+          ))}
+        </Rail>
+      )}
+
+      {!!backlog.length && (
+        <Rail
+          title="ناوي أختمها"
+          subtitle="قائمة الانتظار"
+          action={
+            <Link to="/upcoming" className="text-xs text-primary">
+              الخطة
+            </Link>
+          }
+        >
+          {backlog.map((e, i) => (
+            <RailCard key={e.id} entry={e} index={i} />
+          ))}
+        </Rail>
+      )}
+
+      {!!completed.length && (
+        <Rail
+          title="قاعة الألعاب المكتملة"
+          subtitle="إنجازاتك"
+          action={
+            <Link to="/library" className="text-xs text-primary">
+              الكل
+            </Link>
+          }
+        >
+          {completed.map((e, i) => (
+            <TrophyRailCard key={e.id} entry={e} index={i} onOpen={() => setReviewed(e)} />
+          ))}
+        </Rail>
+      )}
+
+
 
       {/* B — تحدي الأسبوع */}
       <section>
