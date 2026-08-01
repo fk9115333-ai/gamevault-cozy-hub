@@ -14,11 +14,9 @@ import type { ReactNode } from "react";
 
 const allStatuses: { v: Status; l: string }[] = [
   { v: "current", l: "قيد اللعب" },
-  { v: "completed", l: "مكتملة" },
-  { v: "backlog", l: "الانتظار" },
+  { v: "backlog", l: "ناوي أختمها" },
+  { v: "completed", l: "تم الختم" },
 ];
-
-const toDateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 
 /** تقييم مرئي من 10 نجوم */
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
