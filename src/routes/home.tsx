@@ -63,6 +63,16 @@ function Dashboard() {
   const currentUser = useStore((s) => s.currentUser);
 
   const hero = data.entries.find((e) => e.status === "current") ?? null;
+  const [reviewed, setReviewed] = useState<GameEntry | null>(null);
+  const playing = useMemo(() => data.entries.filter((e) => e.status === "current"), [data.entries]);
+  const backlog = useMemo(() => data.entries.filter((e) => e.status === "backlog"), [data.entries]);
+  const completed = useMemo(
+    () =>
+      data.entries
+        .filter((e) => e.status === "completed")
+        .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? "")),
+    [data.entries],
+  );
   const gotm = gameOfMonth(data.entries);
   const memories = memoryBox(data.entries);
   const stats = computeStats(data.entries);
