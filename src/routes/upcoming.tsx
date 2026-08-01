@@ -11,6 +11,9 @@ import { motion } from "motion/react";
 import { Trash2, ChevronDown, ChevronUp, GripVertical, Star } from "lucide-react";
 
 export const Route = createFileRoute("/upcoming")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: search['tab'] === "toBeat" ? ("toBeat" as const) : ("releases" as const),
+  }),
   head: () => ({
     meta: [
       { title: "الخطة — GameHub" },
@@ -33,11 +36,13 @@ const topTabs = [
 ] as const;
 
 function PlanPage() {
+  const { tab: initialTab } = Route.useSearch();
   const data = useCurrentData();
   const removeGame = useStore((s) => s.removeGame);
   const reorderQueue = useStore((s) => s.reorderQueue);
-  const [tab, setTab] = useState<(typeof topTabs)[number]["v"]>("releases");
+  const [tab, setTab] = useState<(typeof topTabs)[number]["v"]>(initialTab);
   const [dragId, setDragId] = useState<number | null>(null);
+
 
   const releases = [...data.entries]
     .filter((e) => e.status === "hype")
@@ -162,40 +167,43 @@ function PlanPage() {
                 );
                 setDragId(null);
               }}
-              className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-3 surface-hover"
+              className="flex w-full items-start gap-3 rounded-3xl border border-border bg-card p-4 surface-hover"
             >
-              <span className="grid size-9 shrink-0 cursor-grab place-items-center rounded-xl bg-secondary text-xs font-black text-primary">
+              <span className="mt-1 grid size-10 shrink-0 cursor-grab place-items-center rounded-xl bg-secondary text-sm font-black text-primary">
                 {i + 1}
               </span>
 
               <Link
                 to="/game/$id"
                 params={{ id: String(e.id) }}
-                className="flex min-w-0 flex-1 items-center gap-3"
+                className="flex min-w-0 flex-1 items-start gap-4"
               >
                 {e.image && (
                   <img
                     src={e.image}
                     alt={e.name}
                     loading="lazy"
-                    className="size-16 shrink-0 rounded-xl object-cover"
+                    className="h-24 w-20 shrink-0 rounded-2xl object-cover"
                   />
                 )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-bold">{e.name}</p>
-                  <p className="truncate text-[11px] text-muted-foreground">
+                <div className="min-w-0 flex-1 space-y-1.5 py-0.5">
+                  <p className="line-clamp-2 whitespace-normal break-words font-display text-base font-black leading-snug">
+                    <bdi>{e.name}</bdi>
+                  </p>
+                  <p className="whitespace-normal text-xs leading-relaxed text-muted-foreground">
                     {e.genres[0] ?? "لعبة"}
                     {e.playtimeEstimate ? ` · ~${num(e.playtimeEstimate)} ساعة` : ""}
                     {e.metacritic ? ` · ميتاكريتك ${e.metacritic}` : ""}
                   </p>
+                  {e.rating > 0 && (
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Star className="size-3.5 text-primary" />
+                      {num(e.rating, 1)}
+                    </span>
+                  )}
                 </div>
-                {e.rating > 0 && (
-                  <span className="hidden shrink-0 items-center gap-1 text-xs text-muted-foreground sm:flex">
-                    <Star className="size-3.5 text-primary" />
-                    {num(e.rating, 1)}
-                  </span>
-                )}
               </Link>
+
 
               <div className="flex shrink-0 flex-col gap-1">
                 <Button

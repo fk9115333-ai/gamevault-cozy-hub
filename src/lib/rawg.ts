@@ -77,3 +77,16 @@ export const getTrending = () =>
     exclude_additions: "true",
     dates: `${new Date().getFullYear() - 2}-01-01,${new Date().toISOString().slice(0, 10)}`,
   }).then((d) => d.results.filter((g) => isBaseGame(g.name)));
+
+/** توصيات ذكية بناءً على أنواع الألعاب المكتملة — أو أفضل الألعاب عند عدم وجود سجل */
+export const getRecommended = (genreSlugs: string[] = []) =>
+  rawg<{ results: RawgGame[] }>("/games", {
+    ...(genreSlugs.length ? { genres: genreSlugs.slice(0, 4).join(",") } : {}),
+    ordering: "-metacritic",
+    metacritic: "82,100",
+    page_size: 30,
+    platforms: PLATFORMS,
+    exclude_collection: "true",
+    exclude_additions: "true",
+    dates: `${new Date().getFullYear() - 12}-01-01,${new Date().toISOString().slice(0, 10)}`,
+  }).then((d) => d.results.filter((g) => isBaseGame(g.name) && g.background_image));

@@ -22,8 +22,11 @@ import { CelebrationModal } from "@/components/CelebrationModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getRecommended } from "@/lib/rawg";
 import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -64,13 +67,35 @@ function Dashboard() {
   const users = useStore((s) => s.users);
   const currentUser = useStore((s) => s.currentUser);
   const updateGame = useStore((s) => s.updateGame);
+  const addGame = useStore((s) => s.addGame);
+
 
   const hero = data.entries.find((e) => e.status === "current") ?? null;
   const [reviewed, setReviewed] = useState<GameEntry | null>(null);
+
+  /** أنواع الألعاب المكتملة — أساس التوصيات */
+  const topGenres = useMemo(() => {
+    const count = new Map<string, number>();
+    for (const e of data.entries.filter((x) => x.status === "completed"))
+      for (const g of e.genres) count.set(g, (count.get(g) ?? 0) + 1);
+    return [...count.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([g]) => g.toLowerCase().replace(/\s+/g, "-"));
+  }, [data.entries]);
+
+  const { data: recommended = [] } = useQuery({
+    queryKey: ["recommended", topGenres],
+    queryFn: () => getRecommended(topGenres),
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const owned = useMemo(() => new Set(data.entries.map((e) => e.id)), [data.entries]);
   const trending = useMemo(
-    () => data.entries.filter((e) => e.status === "backlog" || e.status === "hype").slice(0, 14),
-    [data.entries],
+    () => recommended.filter((g) => !owned.has(g.id)).slice(0, 14),
+    [recommended, owned],
   );
+
   const gotm = gameOfMonth(data.entries);
   const memories = memoryBox(data.entries);
   const stats = computeStats(data.entries);
@@ -188,7 +213,7 @@ function Dashboard() {
               <p className="text-xs text-muted-foreground">ما فيه لعبة قيد اللعب</p>
               <h2 className="font-display text-2xl font-black md:text-3xl">ابدأ رحلتك الجديدة اليوم</h2>
               <p className="text-xs text-muted-foreground">{quote}</p>
-              <Link to="/upcoming" className="w-fit">
+              <Link to="/upcoming" search={{ tab: "toBeat" }} className="w-fit">
                 <Button className="h-12 w-fit rounded-2xl border border-yellow-300/70 bg-primary px-6 font-display text-base font-black text-primary-foreground shadow-[0_0_30px_-6px_rgba(234,179,8,0.85)] transition-transform hover:scale-[1.03] hover:bg-primary/90 active:scale-[0.97]">
                   <Plus className="size-4" /> اختر لعبة من الخطة
                 </Button>
@@ -202,22 +227,35 @@ function Dashboard() {
       <CelebrationModal game={reviewed} review onClose={() => setReviewed(null)} />
 
       {!!trending.length && (
-        <Rail title="الأكثر رواجاً" subtitle="مقترحات من قائمتك — أضفها لقيد اللعب">
-          {trending.map((e, i) => (
+        <Rail
+          title="الأكثر رواجاً"
+          subtitle={
+            topGenres.length ? "مقترحات تناسب أنواع ألعابك المختومة" : "أفضل الألعاب تقييمًا"
+          }
+        >
+          {trending.map((g, i) => (
             <PosterCard
-              key={e.id}
-              entry={e}
+              key={g.id}
+              entry={
+                {
+                  id: g.id,
+                  name: g.name,
+                  image: g.background_image,
+                  genres: (g.genres ?? []).map((x) => x.name),
+                } as unknown as GameEntry
+              }
               index={i}
-              quickLabel="ابدأ اللعب"
+              quickLabel="أضفها للخطة"
               onQuick={() => {
                 buzz(40);
-                updateGame(e.id, { status: "current" });
-                toast.success(`«${e.name}» صارت قيد اللعب`);
+                addGame(g, "backlog");
+                toast.success(`«${g.name}» أُضيفت إلى الخطة`);
               }}
             />
           ))}
         </Rail>
       )}
+
 
       {/* B — تحدي الأسبوع */}
       <section>
