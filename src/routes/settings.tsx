@@ -1,42 +1,119 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
-import { useStore } from "@/lib/store";
+import { useRef } from "react";
+import { useStore, useCurrentData, useOtherData, type UserId } from "@/lib/store";
 import { SectionTitle } from "@/components/ui-bits";
+import { AvatarPicker } from "@/components/AvatarPicker";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Download, Upload } from "lucide-react";
+import { buzz } from "@/lib/haptics";
+import { Download, Upload, Bell, Users, Palette, UserCog, HardDrive } from "lucide-react";
+import type { ReactNode } from "react";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "الإعدادات والنسخ الاحتياطي — GameHub" },
-      { name: "description", content: "تصدير واستيراد بياناتك محليًا وإدارة التذكيرات." },
+      { title: "الإعدادات — GameHub" },
+      {
+        name: "description",
+        content: "الملف الشخصي، الإشعارات، الربط مع أخوك، النسخ الاحتياطي والمظهر.",
+      },
       { property: "og:title", content: "الإعدادات — GameHub" },
-      { property: "og:description", content: "نسخ احتياطي محلي وجاهزية للمزامنة السحابية." },
+      { property: "og:description", content: "تحكم كامل في حسابك وبياناتك داخل GameHub." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: SettingsPage,
 });
 
-const reminders = [
-  "قبل 30 يومًا من الإصدار",
-  "قبل 7 أيام",
-  "قبل يوم واحد",
-  "يوم الإصدار",
-  "عند إنهاء لعبة",
-  "عند فتح إنجاز",
-  "عند إكمال هدف",
+const NOTIFY_KEY = "gamehub:notify";
+const APPEARANCE_KEY = "gamehub:appearance";
+
+const notifications = [
+  { id: "activity", label: "تنبيهات نشاط أخوك" },
+  { id: "releases", label: "تذكير الإصدارات" },
+  { id: "showdown", label: "تحديثات التحدي الأسبوعي" },
 ];
+
+const appearance = [
+  { id: "animations", label: "حركات الواجهة" },
+  { id: "haptics", label: "الاهتزاز عند اللمس" },
+];
+
+function readFlags(key: string, ids: string[]) {
+  if (typeof localStorage === "undefined") return Object.fromEntries(ids.map((i) => [i, true]));
+  try {
+    const raw = JSON.parse(localStorage.getItem(key) ?? "{}") as Record<string, boolean>;
+    return Object.fromEntries(ids.map((i) => [i, raw[i] ?? true]));
+  } catch {
+    return Object.fromEntries(ids.map((i) => [i, true]));
+  }
+}
+
+/** بطاقة قسم بأسلوب VIP مع فاصل ذهبي */
+function Card({ icon: Icon, title, hint, children }: { icon: typeof Bell; title: string; hint?: string; children: ReactNode }) {
+  return (
+    <section className="overflow-hidden rounded-[2rem] border border-border bg-card">
+      <div className="flex items-center gap-3 p-5">
+        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-secondary/60 text-primary">
+          <Icon className="size-5" />
+        </span>
+        <div className="min-w-0">
+          <h3 className="font-display font-bold">{title}</h3>
+          {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
+        </div>
+      </div>
+      <div className="h-px bg-gradient-to-l from-transparent via-yellow-500/40 to-transparent" />
+      <div className="space-y-4 p-5">{children}</div>
+    </section>
+  );
+}
+
+function ToggleRow({
+  label,
+  storageKey,
+  id,
+  defaults,
+}: {
+  label: string;
+  storageKey: string;
+  id: string;
+  defaults: Record<string, boolean>;
+}) {
+  const set = (v: boolean) => {
+    buzz(20);
+    const next = { ...defaults, [id]: v };
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+    defaults[id] = v;
+  };
+  return (
+    <div className="flex items-center justify-between rounded-2xl bg-secondary/40 px-4 py-3">
+      <Label className="text-sm">{label}</Label>
+      <Switch defaultChecked={defaults[id] ?? true} onCheckedChange={set} />
+    </div>
+  );
+}
 
 function SettingsPage() {
   const users = useStore((s) => s.users);
+  const currentUser = useStore((s) => s.currentUser);
+  const setUser = useStore((s) => s.setUser);
+  const updateProfile = useStore((s) => s.updateProfile);
   const importData = useStore((s) => s.importData);
+  const data = useCurrentData();
+  const other = useOtherData();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [on, setOn] = useState<Record<string, boolean>>(
-    Object.fromEntries(reminders.map((r) => [r, true])),
-  );
+
+  const notifyFlags = readFlags(NOTIFY_KEY, notifications.map((n) => n.id));
+  const appearanceFlags = readFlags(APPEARANCE_KEY, appearance.map((a) => a.id));
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify({ users }, null, 2)], { type: "application/json" });
@@ -56,14 +133,56 @@ function SettingsPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <SectionTitle title="الإعدادات" subtitle="نسخ احتياطي محلي وتذكيرات" />
+    <div className="space-y-5">
+      <SectionTitle title="الإعدادات" subtitle="تحكم كامل في حسابك وتجربتك" />
 
-      <section className="rounded-3xl border border-border bg-card p-6">
-        <h3 className="mb-1 font-display font-bold">النسخ الاحتياطي</h3>
-        <p className="mb-4 text-xs text-muted-foreground">
-          البيانات محفوظة تلقائيًا في متصفحك، والبنية جاهزة للمزامنة السحابية لاحقًا.
-        </p>
+      <Card icon={UserCog} title="الملف الشخصي" hint="غيّر اسمك وصورتك">
+        <div className="flex items-center gap-4">
+          <AvatarPicker size={72} />
+          <div className="min-w-0 flex-1 space-y-2">
+            <Label className="text-xs text-muted-foreground">الاسم</Label>
+            <Input
+              value={data.profile.name}
+              onChange={(e) => updateProfile({ name: e.target.value })}
+              className="rounded-2xl"
+            />
+          </div>
+        </div>
+      </Card>
+
+      <Card icon={Bell} title="الإشعارات" hint="تنبيهات الويب">
+        {notifications.map((n) => (
+          <ToggleRow key={n.id} id={n.id} label={n.label} storageKey={NOTIFY_KEY} defaults={notifyFlags} />
+        ))}
+      </Card>
+
+      <Card icon={Users} title={`الربط مع ${other.profile.name}`} hint="الحساب المقترن في تحدي الأسبوع">
+        <div className="flex items-center gap-3 rounded-2xl bg-secondary/40 px-4 py-3">
+          <UserAvatar value={other.profile.avatar} size={40} framed={false} />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold">{other.profile.name}</p>
+            <p className="text-[11px] text-muted-foreground">مرتبط — تتم مزامنة النشاط والتحدي</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(users) as UserId[]).map((u) => (
+            <Button
+              key={u}
+              size="sm"
+              variant={u === currentUser ? "default" : "secondary"}
+              className="rounded-xl"
+              onClick={() => {
+                buzz(20);
+                setUser(u);
+              }}
+            >
+              {users[u].profile.name}
+            </Button>
+          ))}
+        </div>
+      </Card>
+
+      <Card icon={HardDrive} title="النسخ الاحتياطي" hint="لا تفقد سجل ألعابك أبدًا">
         <div className="flex flex-wrap gap-2">
           <Button onClick={exportJson} className="rounded-xl">
             <Download className="size-4" /> تصدير JSON
@@ -82,22 +201,13 @@ function SettingsPage() {
             }}
           />
         </div>
-      </section>
+      </Card>
 
-      <section className="rounded-3xl border border-border bg-card p-6">
-        <h3 className="mb-4 font-display font-bold">التذكيرات</h3>
-        <div className="space-y-3">
-          {reminders.map((r) => (
-            <div key={r} className="flex items-center justify-between rounded-2xl bg-secondary/40 px-4 py-3">
-              <Label className="text-sm">{r}</Label>
-              <Switch
-                checked={on[r] ?? true}
-                onCheckedChange={(v) => setOn((prev) => ({ ...prev, [r]: v }))}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+      <Card icon={Palette} title="المظهر" hint="حركات الواجهة والاهتزاز">
+        {appearance.map((a) => (
+          <ToggleRow key={a.id} id={a.id} label={a.label} storageKey={APPEARANCE_KEY} defaults={appearanceFlags} />
+        ))}
+      </Card>
     </div>
   );
 }
