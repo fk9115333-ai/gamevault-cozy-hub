@@ -97,7 +97,9 @@ function LibraryPage() {
   const [reviewed, setReviewed] = useState<GameEntry | null>(null);
 
   const list = useMemo(() => {
-    let out = data.entries.filter((e) => (tab === "all" ? true : e.status === tab));
+    let out = data.entries.filter((e) =>
+      tab === "all" ? e.status === "current" || e.status === "completed" : e.status === tab,
+    );
     if (q.trim()) out = out.filter((e) => e.name.toLowerCase().includes(q.toLowerCase()));
     return [...out].sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name);
@@ -113,8 +115,6 @@ function LibraryPage() {
     const by = (s: Status) => data.entries.filter((e) => e.status === s);
     return {
       current: by("current"),
-      backlog: by("backlog"),
-      hype: by("hype"),
       completed: by("completed").sort((a, b) =>
         (b.completedAt ?? "").localeCompare(a.completedAt ?? ""),
       ),
@@ -189,20 +189,6 @@ function LibraryPage() {
                 <Rail title="مواصلة اللعب" subtitle="ألعابك النشطة">
                   {rails.current.map((e, i) => (
                     <RailCard key={e.id} entry={e} index={i} vip />
-                  ))}
-                </Rail>
-              )}
-              {!!rails.backlog.length && (
-                <Rail title="ناوي أختمها" subtitle="قائمة الانتظار">
-                  {rails.backlog.map((e, i) => (
-                    <RailCard key={e.id} entry={e} index={i} />
-                  ))}
-                </Rail>
-              )}
-              {!!rails.hype.length && (
-                <Rail title="المرتقبة" subtitle="إصدارات قادمة">
-                  {rails.hype.map((e, i) => (
-                    <RailCard key={e.id} entry={e} index={i} />
                   ))}
                 </Rail>
               )}

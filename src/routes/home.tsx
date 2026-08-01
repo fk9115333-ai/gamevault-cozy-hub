@@ -17,11 +17,11 @@ import { activityIcon, gameOfMonth, memoryBox, computeStats, computeLevel } from
 import { hijri, num } from "@/lib/dates";
 import { SectionTitle } from "@/components/ui-bits";
 import { LogSessionSheet } from "@/components/GameEditDialog";
-import { Rail, RailCard, TrophyRailCard } from "@/components/Rail";
+import { Rail, RailCard } from "@/components/Rail";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -65,14 +65,6 @@ function Dashboard() {
   const hero = data.entries.find((e) => e.status === "current") ?? null;
   const [reviewed, setReviewed] = useState<GameEntry | null>(null);
   const playing = useMemo(() => data.entries.filter((e) => e.status === "current"), [data.entries]);
-  const backlog = useMemo(() => data.entries.filter((e) => e.status === "backlog"), [data.entries]);
-  const completed = useMemo(
-    () =>
-      data.entries
-        .filter((e) => e.status === "completed")
-        .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? "")),
-    [data.entries],
-  );
   const gotm = gameOfMonth(data.entries);
   const memories = memoryBox(data.entries);
   const stats = computeStats(data.entries);
@@ -117,7 +109,9 @@ function Dashboard() {
     return pool[seed % pool.length]!;
   }, [data.entries, currentUser]);
 
-  const quote = QUOTES[new Date().getDate() % QUOTES.length]!;
+  const [quoteIdx, setQuoteIdx] = useState(0);
+  useEffect(() => setQuoteIdx(new Date().getDate() % QUOTES.length), []);
+  const quote = QUOTES[quoteIdx]!;
   const quick = [
     { icon: Trophy, label: "مكتملة", value: num(stats.completed) },
     { icon: Zap, label: "المستوى", value: num(level) },
@@ -235,37 +229,6 @@ function Dashboard() {
         </Rail>
       )}
 
-      {!!backlog.length && (
-        <Rail
-          title="ناوي أختمها"
-          subtitle="قائمة الانتظار"
-          action={
-            <Link to="/upcoming" className="text-xs text-primary">
-              الخطة
-            </Link>
-          }
-        >
-          {backlog.map((e, i) => (
-            <RailCard key={e.id} entry={e} index={i} />
-          ))}
-        </Rail>
-      )}
-
-      {!!completed.length && (
-        <Rail
-          title="قاعة الألعاب المكتملة"
-          subtitle="إنجازاتك"
-          action={
-            <Link to="/library" className="text-xs text-primary">
-              الكل
-            </Link>
-          }
-        >
-          {completed.map((e, i) => (
-            <TrophyRailCard key={e.id} entry={e} index={i} onOpen={() => setReviewed(e)} />
-          ))}
-        </Rail>
-      )}
 
 
 
