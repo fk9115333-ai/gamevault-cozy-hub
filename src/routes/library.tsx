@@ -108,6 +108,18 @@ function LibraryPage() {
 
   const franchises = useMemo(() => computeFranchises(data.entries), [data.entries]);
 
+  const rails = useMemo(() => {
+    const by = (s: Status) => data.entries.filter((e) => e.status === s);
+    return {
+      current: by("current"),
+      backlog: by("backlog"),
+      hype: by("hype"),
+      completed: by("completed").sort((a, b) =>
+        (b.completedAt ?? "").localeCompare(a.completedAt ?? ""),
+      ),
+    };
+  }, [data.entries]);
+
   return (
     <div className="space-y-10">
       <CelebrationModal game={celebrated} onClose={() => setCelebrated(null)} />
