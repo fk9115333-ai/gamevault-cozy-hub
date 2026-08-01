@@ -113,8 +113,6 @@ function LibraryPage() {
     const by = (s: Status) => data.entries.filter((e) => e.status === s);
     return {
       current: by("current"),
-      backlog: by("backlog"),
-      hype: by("hype"),
       completed: by("completed").sort((a, b) =>
         (b.completedAt ?? "").localeCompare(a.completedAt ?? ""),
       ),
