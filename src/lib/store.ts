@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import type { RawgGame } from "./rawg";
 
 export type UserId = "faisal" | "mishal";
-export type Status = "current" | "completed" | "backlog" | "wishlist";
+export type Status = "current" | "completed" | "backlog" | "wishlist" | "hype";
 export type Priority = "high" | "medium" | "low";
 
 export type GameEntry = {
@@ -14,7 +14,6 @@ export type GameEntry = {
   released: string | null;
   rating: number;
   metacritic: number | null;
-  platforms: string[];
   genres: string[];
   developer: string | null;
   publisher: string | null;
@@ -29,12 +28,8 @@ export type GameEntry = {
   notes: string;
   bestMoment: string;
   worstMoment: string;
-  difficulty: string;
-  platform: string;
   priority: Priority;
-  price: number;
-  achievements: number;
-  replays: number;
+  coop: boolean;
   fullCompletion: boolean;
   startedAt: string | null;
   completedAt: string | null;
@@ -101,7 +96,6 @@ export const entryFromRawg = (g: RawgGame, status: Status): GameEntry => ({
   released: g.released,
   rating: g.rating ?? 0,
   metacritic: g.metacritic ?? null,
-  platforms: (g.platforms ?? []).map((p) => p.platform.name),
   genres: (g.genres ?? []).map((x) => x.name),
   developer: g.developers?.[0]?.name ?? null,
   publisher: g.publishers?.[0]?.name ?? null,
@@ -116,12 +110,8 @@ export const entryFromRawg = (g: RawgGame, status: Status): GameEntry => ({
   notes: "",
   bestMoment: "",
   worstMoment: "",
-  difficulty: "عادي",
-  platform: (g.platforms ?? [])[0]?.platform.name ?? "",
   priority: "medium",
-  price: 0,
-  achievements: 0,
-  replays: 0,
+  coop: false,
   fullCompletion: false,
   startedAt: status === "current" ? new Date().toISOString() : null,
   completedAt: status === "completed" ? new Date().toISOString() : null,
@@ -133,11 +123,14 @@ const statusLabel: Record<Status, string> = {
   completed: "المكتملة",
   backlog: "قائمة الانتظار",
   wishlist: "قائمة الرغبات",
+  hype: "المرتقبة",
 };
+
+export const otherUser = (u: UserId): UserId => (u === "faisal" ? "mishal" : "faisal");
 
 export const useStore = create<State>()(
   persist(
-    (set, get) => {
+    (set) => {
       const mutate = (fn: (u: UserData) => UserData) =>
         set((s) => ({
           users: { ...s.users, [s.currentUser]: fn(s.users[s.currentUser]) },
@@ -151,6 +144,56 @@ export const useStore = create<State>()(
         ].slice(0, 200),
       });
 
+      // mirrors a co-op entry (hours + completion) into the other brother's library
+      const syncCoop = (s: State, entry: GameEntry): State["users"] => {
+        const other = otherUser(s.currentUser);
+        const data = s.users[other];
+        const exists = data.entries.some((e) => e.id === entry.id);
+        const mirrored: GameEntry = {
+          ...entry,
+          favorite: exists ? (data.entries.find((e) => e.id === entry.id)?.favorite ?? false) : false,
+        };
+        return {
+          ...s.users,
+          [other]: {
+            ...data,
+            entries: exists
+              ? data.entries.map((e) =>
+                  e.id === entry.id
+                    ? {
+                        ...e,
+                        hours: entry.hours,
+                        coop: true,
+                        status: entry.status,
+                        progress: entry.progress,
+                        fullCompletion: entry.fullCompletion,
+                        completedAt: entry.completedAt,
+                      }
+                    : e,
+                )
+              : [mirrored, ...data.entries],
+          },
+        };
+      };
+
+      const applyEntry = (id: number, patch: Partial<GameEntry>, activity?: (e: GameEntry) => [Activity["type"], string]) =>
+        set((s) => {
+          const data = s.users[s.currentUser];
+          const before = data.entries.find((e) => e.id === id);
+          if (!before) return s;
+          const after = { ...before, ...patch };
+          let next: UserData = {
+            ...data,
+            entries: data.entries.map((e) => (e.id === id ? after : e)),
+          };
+          if (activity) {
+            const [type, text] = activity(after);
+            next = log(next, type, text);
+          }
+          const users = { ...s.users, [s.currentUser]: next };
+          return after.coop ? { users: syncCoop({ ...s, users }, after) } : { users };
+        });
+
       return {
         currentUser: "faisal",
         users: {
@@ -163,21 +206,27 @@ export const useStore = create<State>()(
             if (u.entries.some((e) => e.id === g.id)) {
               return {
                 ...u,
-                entries: u.entries.map((e) => (e.id === g.id ? { ...e, status } : e)),
+                entries: u.entries.map((e) =>
+                  e.id === g.id
+                    ? {
+                        ...e,
+                        status,
+                        progress: status === "completed" ? 100 : e.progress,
+                        completedAt:
+                          status === "completed" ? (e.completedAt ?? new Date().toISOString()) : e.completedAt,
+                      }
+                    : e,
+                ),
               };
             }
             const next = { ...u, entries: [entryFromRawg(g, status), ...u.entries] };
             return log(
               next,
-              status === "current" ? "start" : "add",
+              status === "current" ? "start" : status === "completed" ? "finish" : "add",
               `أُضيفت «${g.name}» إلى ${statusLabel[status]}`,
             );
           }),
-        updateGame: (id, patch) =>
-          mutate((u) => ({
-            ...u,
-            entries: u.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)),
-          })),
+        updateGame: (id, patch) => applyEntry(id, patch),
         removeGame: (id) => mutate((u) => ({ ...u, entries: u.entries.filter((e) => e.id !== id) })),
         toggleFavorite: (id) =>
           mutate((u) => {
@@ -191,24 +240,19 @@ export const useStore = create<State>()(
               : next;
           }),
         completeGame: (id, data) =>
-          mutate((u) => {
-            const entry = u.entries.find((e) => e.id === id);
-            const next = {
-              ...u,
-              entries: u.entries.map((e) =>
-                e.id === id
-                  ? {
-                      ...e,
-                      ...data,
-                      status: "completed" as Status,
-                      progress: 100,
-                      completedAt: new Date().toISOString(),
-                    }
-                  : e,
-              ),
-            };
-            return entry ? log(next, "finish", `أُنهيت «${entry.name}» 🎉`) : next;
-          }),
+          applyEntry(
+            id,
+            {
+              ...data,
+              status: "completed",
+              progress: 100,
+              completedAt: new Date().toISOString(),
+            },
+            (e) => [
+              "finish",
+              `ختم «${e.name}» 🎉${e.personalRating ? ` وأعطاها تقييم ${e.personalRating}/10` : ""}`,
+            ],
+          ),
         updateProfile: (patch) => mutate((u) => ({ ...u, profile: { ...u.profile, ...patch } })),
         addGoal: (g) =>
           mutate((u) => ({ ...u, goals: [...u.goals, { ...g, id: crypto.randomUUID() }] })),
@@ -230,3 +274,4 @@ export const useStore = create<State>()(
 );
 
 export const useCurrentData = () => useStore((s) => s.users[s.currentUser]);
+export const useOtherData = () => useStore((s) => s.users[otherUser(s.currentUser)]);
