@@ -29,15 +29,12 @@ export const Route = createFileRoute("/library")({
   component: LibraryPage,
 });
 
-const tabs: { v: Status | "all" | "favorites"; l: string }[] = [
+const tabs: { v: Status | "all"; l: string }[] = [
   { v: "all", l: "الكل" },
   { v: "current", l: "قيد اللعب" },
   { v: "completed", l: "المكتملة" },
-  { v: "next", l: "التالي" },
-  { v: "backlog", l: "الانتظار" },
-  { v: "hype", l: "المرتقبة" },
-  { v: "favorites", l: "المفضلة" },
 ];
+
 
 const sorts = [
   { v: "added", l: "الأحدث" },
