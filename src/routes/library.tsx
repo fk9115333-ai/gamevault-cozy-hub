@@ -18,10 +18,10 @@ export const Route = createFileRoute("/library")({
       { title: "المكتبة — GameHub" },
       {
         name: "description",
-        content: "كل ألعابك: قيد اللعب، المكتملة، التالي بترتيبك الخاص، الانتظار والسلاسل.",
+        content: "كل ألعابك: قيد اللعب، المكتملة، الانتظار والسلاسل.",
       },
       { property: "og:title", content: "المكتبة — GameHub" },
-      { property: "og:description", content: "إدارة كاملة لمكتبة ألعابك مع طابور «التالي» والسلاسل." },
+      { property: "og:description", content: "إدارة كاملة لمكتبة ألعابك مع «ناوي أختمها» والسلاسل." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

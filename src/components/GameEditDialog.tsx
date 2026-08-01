@@ -15,7 +15,6 @@ import type { ReactNode } from "react";
 const allStatuses: { v: Status; l: string }[] = [
   { v: "current", l: "قيد اللعب" },
   { v: "completed", l: "مكتملة" },
-  { v: "next", l: "التالي" },
   { v: "backlog", l: "الانتظار" },
 ];
 

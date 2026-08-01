@@ -12,8 +12,8 @@ import {
 } from "./sync";
 
 export type UserId = "faisal" | "mishal";
-/** الحالات: مكتملة، قيد اللعب، التالي (طابور مرتّب)، الانتظار، المرتقبة (ألعاب لم تصدر) */
-export type Status = "current" | "completed" | "next" | "backlog" | "hype";
+/** الحالات: مكتملة، قيد اللعب، الانتظار (ناوي أختمها)، المرتقبة (ألعاب لم تصدر) */
+export type Status = "current" | "completed" | "backlog" | "hype";
 export type Priority = "high" | "medium" | "low";
 
 export type PlaySession = {
@@ -39,7 +39,7 @@ export type GameEntry = {
   status: Status;
   favorite: boolean;
   favoriteOrder: number;
-  /** ترتيب الطابور في «التالي» */
+  /** ترتيب الطابور في «ناوي أختمها» */
   queuePosition: number;
   progress: number;
   hours: number;
@@ -167,10 +167,16 @@ export const entryFromRawg = (g: RawgGame, status: Status): GameEntry => ({
 export const statusLabel: Record<Status, string> = {
   current: "قيد اللعب",
   completed: "المكتملة",
-  next: "التالي",
   backlog: "الانتظار",
   hype: "المرتقبة",
 };
+
+/** توافق مع البيانات القديمة: حالة «التالي» أصبحت «الانتظار» */
+export const normalizeStatus = (s: string): Status =>
+  s === "next" ? "backlog" : (s as Status);
+
+const normalizeEntries = (entries: GameEntry[]): GameEntry[] =>
+  entries.map((e) => (e.status === ("next" as unknown as Status) ? { ...e, status: "backlog" as Status } : e));
 
 export const otherUser = (u: UserId): UserId => (u === "faisal" ? "mishal" : "faisal");
 
@@ -275,9 +281,9 @@ export const useStore = create<State>()(
               return { ...u, entries: u.entries.map((e) => (e.id === g.id ? after : e)) };
             }
             const entry = entryFromRawg(g, status);
-            if (status === "next")
+            if (status === "backlog")
               entry.queuePosition =
-                Math.max(0, ...u.entries.filter((e) => e.status === "next").map((e) => e.queuePosition)) + 1;
+                Math.max(0, ...u.entries.filter((e) => e.status === "backlog").map((e) => e.queuePosition)) + 1;
             pushEntry(uid, entry);
             return log(
               { ...u, entries: [entry, ...u.entries] },
@@ -399,13 +405,13 @@ export const useStore = create<State>()(
               faisal: {
                 ...s.users.faisal,
                 profile: { ...s.users.faisal.profile, ...snap.profiles.faisal },
-                entries: snap.entries.faisal,
+                entries: normalizeEntries(snap.entries.faisal),
                 activities: snap.activities.faisal,
               },
               mishal: {
                 ...s.users.mishal,
                 profile: { ...s.users.mishal.profile, ...snap.profiles.mishal },
-                entries: snap.entries.mishal,
+                entries: normalizeEntries(snap.entries.mishal),
                 activities: snap.activities.mishal,
               },
             },
@@ -415,6 +421,16 @@ export const useStore = create<State>()(
     },
     {
       name: "gamehub-store-v3",
+      version: 2,
+      migrate: (state) => {
+        const s = state as State | undefined;
+        if (s?.users) {
+          (["faisal", "mishal"] as UserId[]).forEach((u) => {
+            s.users[u] = { ...s.users[u], entries: normalizeEntries(s.users[u].entries ?? []) };
+          });
+        }
+        return s as State;
+      },
       partialize: (s) => ({ currentUser: s.currentUser, users: s.users }) as unknown as State,
     },
   ),

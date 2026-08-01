@@ -184,7 +184,7 @@ function MePage() {
 
       {/* أفضل ألعابي */}
       <section>
-        <SectionTitle title="قاعة المشاهير" subtitle="أفضل 10 ألعاب حسب تقييمك" />
+        <SectionTitle title="أفضل 10 ألعاب" subtitle="مرتّبة حسب تقييمك الشخصي" />
         {hallOfFame.length ? (
           <div className="space-y-2">
             {hallOfFame.map((g, i) => (

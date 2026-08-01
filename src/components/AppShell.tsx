@@ -10,6 +10,7 @@ import {
   Crown,
   PartyPopper,
   BarChart3,
+  Newspaper,
 } from "lucide-react";
 import { useCurrentData, useStore } from "@/lib/store";
 import { computeLevel } from "@/lib/stats";
@@ -30,8 +31,9 @@ const mainNav = [
 const nav = [
   ...mainNav,
   { to: "/stats", label: "الإحصائيات", icon: BarChart3 },
+  { to: "/news", label: "أخبار الجيمرز", icon: Newspaper },
   { to: "/timeline", label: "الخط الزمني", icon: ActivityIcon },
-  { to: "/hall", label: "قاعة المشاهير", icon: Crown },
+  { to: "/hall", label: "أفضل 10 ألعاب", icon: Crown },
   { to: "/wrap", label: "ملخص السنة", icon: PartyPopper },
   { to: "/settings", label: "الإعدادات", icon: Settings2 },
 ] as const;
