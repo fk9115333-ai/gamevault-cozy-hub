@@ -26,6 +26,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getRecommended } from "@/lib/rawg";
 import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
+import heroFallback from "@/assets/hero-fallback.jpg";
 
 
 export const Route = createFileRoute("/home")({
