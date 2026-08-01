@@ -183,14 +183,6 @@ function GamePage() {
         </section>
       )}
 
-      {game.description_raw && (
-        <section className="rounded-3xl border border-border bg-card p-6">
-          <h2 className="mb-2 font-display text-lg font-bold">القصة</h2>
-          <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">
-            {game.description_raw}
-          </p>
-        </section>
-      )}
 
       {!!shots?.length && (
         <section>
