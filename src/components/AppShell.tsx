@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { SmartSearch } from "./SmartSearch";
 import { UserSwitcher } from "./UserSwitcher";
 import { UserAvatar } from "./UserAvatar";
+import logoUrl from "@/assets/gamehub-logo.png";
 import type { ReactNode } from "react";
 
 /** التنقل السفلي: 4 تبويبات (من اليمين لليسار، الإعدادات في أقصى اليسار) */
@@ -112,7 +113,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main className="min-w-0 flex-1">
           <header className="mb-5 flex items-center gap-3">
+            <img
+              src={logoUrl}
+              alt="شعار GameHub"
+              width={36}
+              height={36}
+              className="size-9 shrink-0 rounded-xl ring-1 ring-primary/40 lg:hidden"
+            />
             <Link to="/profile" className="lg:hidden">
+
               <UserAvatar value={profile.avatar} size={40} />
             </Link>
             <div className="min-w-0 flex-1">
