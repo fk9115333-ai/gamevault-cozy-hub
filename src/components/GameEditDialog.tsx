@@ -178,18 +178,19 @@ export function GameEditDialog({
           <SheetTitle className="text-right font-display">{entry.name}</SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-5 p-4">
+        <div className="space-y-4 p-4">
           {unreleased && (
             <p className="rounded-2xl bg-secondary/50 px-4 py-3 text-xs text-muted-foreground">
               لم تصدر بعد — يمكن إضافتها إلى «المرتقبة» فقط.
             </p>
           )}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {statuses.map((s) => (
               <Button
                 key={s.v}
                 variant={draft.status === s.v ? "default" : "secondary"}
                 size="sm"
+                className="h-11 rounded-2xl whitespace-nowrap text-xs"
                 onClick={() => {
                   buzz(20);
                   set("status", s.v);
