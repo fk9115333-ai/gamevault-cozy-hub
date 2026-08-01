@@ -11,6 +11,7 @@ import { Pencil, Star } from "lucide-react";
 import { num } from "@/lib/dates";
 import { computeFranchises } from "@/lib/stats";
 import { completionSummary } from "@/lib/completion";
+import { Rail, RailCard, TrophyRailCard } from "@/components/Rail";
 
 /** بطاقة لعبة مختومة — غرفة الإنجازات */
 function CompletedCard({ entry, onOpen }: { entry: GameEntry; onOpen: () => void }) {
