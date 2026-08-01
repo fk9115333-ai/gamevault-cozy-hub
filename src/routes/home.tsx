@@ -17,11 +17,11 @@ import { activityIcon, gameOfMonth, memoryBox, computeStats, computeLevel } from
 import { hijri, num } from "@/lib/dates";
 import { SectionTitle } from "@/components/ui-bits";
 import { LogSessionSheet } from "@/components/GameEditDialog";
-import { Rail, RailCard, TrophyRailCard } from "@/components/Rail";
+import { Rail, RailCard } from "@/components/Rail";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
