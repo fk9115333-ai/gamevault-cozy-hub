@@ -50,7 +50,6 @@ export type Profile = {
   avatar: string;
   bio: string;
   favoriteGame: string;
-  favoritePlatform: string;
   favoriteGenre: string;
 };
 
@@ -77,7 +76,6 @@ const emptyUser = (name: string, avatar: string, bio: string): UserData => ({
     avatar,
     bio,
     favoriteGame: "—",
-    favoritePlatform: "PlayStation 5",
     favoriteGenre: "Horror",
   },
   entries: [],

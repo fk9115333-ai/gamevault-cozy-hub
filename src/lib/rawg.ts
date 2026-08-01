@@ -48,16 +48,6 @@ export const getSimilar = (id: string | number) =>
     .then((d) => d.results)
     .catch(() => []);
 
-export const getUpcoming = () => {
-  const today = new Date().toISOString().slice(0, 10);
-  const next = new Date(Date.now() + 1000 * 60 * 60 * 24 * 730).toISOString().slice(0, 10);
-  return rawg<{ results: RawgGame[] }>("/games", {
-    dates: `${today},${next}`,
-    ordering: "released",
-    page_size: 24,
-  }).then((d) => d.results);
-};
-
 export const getTrending = () =>
   rawg<{ results: RawgGame[] }>("/games", {
     ordering: "-added",
