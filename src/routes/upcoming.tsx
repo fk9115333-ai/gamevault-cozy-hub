@@ -12,7 +12,7 @@ import { Trash2, ChevronDown, ChevronUp, GripVertical, Star } from "lucide-react
 
 export const Route = createFileRoute("/upcoming")({
   validateSearch: (search: Record<string, unknown>) => ({
-    tab: search.tab === "toBeat" ? ("toBeat" as const) : ("releases" as const),
+    tab: search['tab'] === "toBeat" ? ("toBeat" as const) : ("releases" as const),
   }),
   head: () => ({
     meta: [
