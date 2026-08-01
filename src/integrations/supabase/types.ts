@@ -14,7 +14,162 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          at: string
+          id: string
+          text: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          at?: string
+          id?: string
+          text: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          at?: string
+          id?: string
+          text?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      game_entries: {
+        Row: {
+          added_at: string
+          best_moment: string
+          completed_at: string | null
+          coop: boolean
+          developer: string | null
+          favorite: boolean
+          favorite_order: number
+          full_completion: boolean
+          game_id: number
+          genres: string[]
+          hours: number
+          image: string | null
+          legacy: boolean
+          metacritic: number | null
+          name: string
+          notes: string
+          personal_rating: number
+          playtime_estimate: number
+          priority: string
+          progress: number
+          publisher: string | null
+          rating: number
+          released: string | null
+          review: string
+          slug: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          worst_moment: string
+        }
+        Insert: {
+          added_at?: string
+          best_moment?: string
+          completed_at?: string | null
+          coop?: boolean
+          developer?: string | null
+          favorite?: boolean
+          favorite_order?: number
+          full_completion?: boolean
+          game_id: number
+          genres?: string[]
+          hours?: number
+          image?: string | null
+          legacy?: boolean
+          metacritic?: number | null
+          name?: string
+          notes?: string
+          personal_rating?: number
+          playtime_estimate?: number
+          priority?: string
+          progress?: number
+          publisher?: string | null
+          rating?: number
+          released?: string | null
+          review?: string
+          slug?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          worst_moment?: string
+        }
+        Update: {
+          added_at?: string
+          best_moment?: string
+          completed_at?: string | null
+          coop?: boolean
+          developer?: string | null
+          favorite?: boolean
+          favorite_order?: number
+          full_completion?: boolean
+          game_id?: number
+          genres?: string[]
+          hours?: number
+          image?: string | null
+          legacy?: boolean
+          metacritic?: number | null
+          name?: string
+          notes?: string
+          personal_rating?: number
+          playtime_estimate?: number
+          priority?: string
+          progress?: number
+          publisher?: string | null
+          rating?: number
+          released?: string | null
+          review?: string
+          slug?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          worst_moment?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar: string
+          bio: string
+          favorite_game: string
+          favorite_genre: string
+          gaming_start_date: string | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar?: string
+          bio?: string
+          favorite_game?: string
+          favorite_genre?: string
+          gaming_start_date?: string | null
+          name?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar?: string
+          bio?: string
+          favorite_game?: string
+          favorite_genre?: string
+          gaming_start_date?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
