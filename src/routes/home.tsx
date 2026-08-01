@@ -22,8 +22,11 @@ import { CelebrationModal } from "@/components/CelebrationModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getRecommended } from "@/lib/rawg";
 import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/home")({
   head: () => ({
