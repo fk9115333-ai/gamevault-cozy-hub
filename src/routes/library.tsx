@@ -170,27 +170,43 @@ function LibraryPage() {
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-              {list.map((e, i) => (
-                <div key={e.id} className="relative">
-                  <GameCard entry={e} index={i} />
-                  <GameEditDialog
-                    entry={e}
-                    onCompleted={(done) => setCelebrated(done)}
-                    trigger={
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="absolute left-3 top-14 size-9 rounded-full"
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                    }
-                  />
-                </div>
-              ))}
+          ) : tab === "all" ? (
+            <div className="space-y-8">
+              {!!rails.current.length && (
+                <Rail title="مواصلة اللعب" subtitle="ألعابك النشطة">
+                  {rails.current.map((e, i) => (
+                    <RailCard key={e.id} entry={e} index={i} vip />
+                  ))}
+                </Rail>
+              )}
+              {!!rails.backlog.length && (
+                <Rail title="ناوي أختمها" subtitle="قائمة الانتظار">
+                  {rails.backlog.map((e, i) => (
+                    <RailCard key={e.id} entry={e} index={i} />
+                  ))}
+                </Rail>
+              )}
+              {!!rails.hype.length && (
+                <Rail title="المرتقبة" subtitle="إصدارات قادمة">
+                  {rails.hype.map((e, i) => (
+                    <RailCard key={e.id} entry={e} index={i} />
+                  ))}
+                </Rail>
+              )}
+              {!!rails.completed.length && (
+                <Rail title="قاعة الألعاب المكتملة" subtitle="إنجازاتك">
+                  {rails.completed.map((e, i) => (
+                    <TrophyRailCard key={e.id} entry={e} index={i} onOpen={() => setReviewed(e)} />
+                  ))}
+                </Rail>
+              )}
             </div>
+          ) : (
+            <Rail title="قيد اللعب" subtitle={`${num(list.length)} لعبة`}>
+              {list.map((e, i) => (
+                <RailCard key={e.id} entry={e} index={i} vip />
+              ))}
+            </Rail>
           )
         ) : (
 
