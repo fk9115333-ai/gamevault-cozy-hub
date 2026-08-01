@@ -44,57 +44,37 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
   );
 }
 
-/** إدخال جلسة لعب: من - إلى مع حساب المدة تلقائيًا */
+/** أزرار جلسات سريعة — بدون حقول يدوية */
+const QUICK = [30, 60, 120, 180];
+
 export function SessionBox({ entryId, onDone }: { entryId: number; onDone?: () => void }) {
   const addSession = useStore((s) => s.addSession);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [start, setStart] = useState("20:30");
-  const [end, setEnd] = useState("23:10");
-  const [manual, setManual] = useState("");
 
-  const minutes = useMemo(() => {
-    if (manual) return Math.max(0, Math.round(Number(manual) * 60));
-    const [sh, sm] = start.split(":").map(Number);
-    const [eh, em] = end.split(":").map(Number);
-    if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) return 0;
-    let d = eh! * 60 + em! - (sh! * 60 + sm!);
-    if (d < 0) d += 24 * 60; // امتدت الجلسة بعد منتصف الليل
-    return d;
-  }, [start, end, manual]);
+  const log = (minutes: number) => {
+    buzz(30);
+    const now = new Date();
+    const end = now.toTimeString().slice(0, 5);
+    const startDate = new Date(now.getTime() - minutes * 60000);
+    addSession(entryId, {
+      date: now.toISOString().slice(0, 10),
+      start: startDate.toTimeString().slice(0, 5),
+      end,
+      minutes,
+    });
+    toast.success("أُضيفت الجلسة إلى ساعاتك");
+    onDone?.();
+  };
 
   return (
     <div className="space-y-3 rounded-2xl bg-secondary/50 p-4">
-      <Label className="text-xs font-bold">⏱️ جلسة لعب</Label>
-      <div className="grid grid-cols-3 gap-2">
-        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <Input type="time" value={start} onChange={(e) => setStart(e.target.value)} />
-        <Input type="time" value={end} onChange={(e) => setEnd(e.target.value)} />
+      <Label className="text-xs font-bold">⏱️ تسجيل جلسة سريعة</Label>
+      <div className="grid grid-cols-4 gap-2">
+        {QUICK.map((m) => (
+          <Button key={m} variant="secondary" size="sm" className="rounded-xl" onClick={() => log(m)}>
+            {m < 60 ? `${m} د` : `${m / 60} س`}
+          </Button>
+        ))}
       </div>
-      <div className="flex items-center gap-2">
-        <Input
-          type="number"
-          step="0.25"
-          placeholder="أو أدخل المدة يدويًا (ساعات)"
-          value={manual}
-          onChange={(e) => setManual(e.target.value)}
-        />
-        <span className="whitespace-nowrap text-xs text-muted-foreground">
-          {Math.floor(minutes / 60)} س {minutes % 60} د
-        </span>
-      </div>
-      <Button
-        className="w-full bg-[var(--gradient-primary)] text-primary-foreground"
-        disabled={minutes <= 0}
-        onClick={() => {
-          buzz(30);
-          addSession(entryId, { date, start, end, minutes });
-          setManual("");
-          toast.success("أُضيفت الجلسة إلى ساعاتك");
-          onDone?.();
-        }}
-      >
-        تسجيل الجلسة
-      </Button>
     </div>
   );
 }
