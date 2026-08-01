@@ -149,27 +149,51 @@ function LibraryPage() {
         </div>
 
         {list.length ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-            {list.map((e, i) => (
-              <div key={e.id} className="relative">
-                <GameCard entry={e} index={i} />
-                <GameEditDialog
-                  entry={e}
-                  onCompleted={(done) => setCelebrated(done)}
-                  trigger={
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      className="absolute left-3 top-14 size-9 rounded-full"
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                  }
-                />
-              </div>
-            ))}
-          </div>
+          tab === "completed" ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {list.map((e) => (
+                <div key={e.id} className="relative">
+                  <CompletedCard entry={e} onOpen={() => setReviewed(e)} />
+                  <GameEditDialog
+                    entry={e}
+                    onCompleted={(done) => setCelebrated(done)}
+                    trigger={
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="absolute left-3 top-3 size-9 rounded-full"
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+              {list.map((e, i) => (
+                <div key={e.id} className="relative">
+                  <GameCard entry={e} index={i} />
+                  <GameEditDialog
+                    entry={e}
+                    onCompleted={(done) => setCelebrated(done)}
+                    trigger={
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="absolute left-3 top-14 size-9 rounded-full"
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          )
         ) : (
+
           <EmptyState text="لا توجد ألعاب هنا بعد." />
         )}
       </div>
