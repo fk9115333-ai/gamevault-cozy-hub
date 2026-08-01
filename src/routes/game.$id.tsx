@@ -1,9 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { getGame, getScreenshots, getSimilar } from "@/lib/rawg";
 import { gregorian, hijri, num } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import { useStore, type Status } from "@/lib/store";
+import { GameEditDialog } from "@/components/GameEditDialog";
+import { Confetti } from "@/components/Confetti";
+import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
 import { Countdown } from "@/components/Countdown";
 import { motion } from "motion/react";
@@ -13,7 +17,7 @@ export const Route = createFileRoute("/game/$id")({
   head: () => ({
     meta: [
       { title: "تفاصيل اللعبة — GameHub" },
-      { name: "description", content: "صفحة تفاصيل غنية: القصة، الصور، المنصات، التقييمات والتاريخ الهجري." },
+      { name: "description", content: "صفحة تفاصيل غنية: القصة، الصور، التقييمات والتاريخ الهجري." },
       { property: "og:title", content: "تفاصيل اللعبة — GameHub" },
       { property: "og:description", content: "كل معلومات اللعبة في صفحة واحدة." },
     ],
@@ -26,11 +30,17 @@ const addOptions: { v: Status; l: string }[] = [
   { v: "completed", l: "مكتملة" },
   { v: "backlog", l: "الانتظار" },
   { v: "wishlist", l: "الرغبات" },
+  { v: "hype", l: "المرتقبة" },
 ];
 
 function GamePage() {
   const { id } = Route.useParams();
   const addGame = useStore((s) => s.addGame);
+  const [editing, setEditing] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  const entry = useStore(
+    (s) => s.users[s.currentUser].entries.find((e) => e.id === Number(id)) ?? null,
+  );
 
   const { data: game, isLoading } = useQuery({
     queryKey: ["game", id],
@@ -60,7 +70,33 @@ function GamePage() {
   const upcoming = game.released && new Date(game.released).getTime() > Date.now();
 
   return (
-    <div className="space-y-8">
+    <div className="relative space-y-8">
+      <Confetti run={celebrate} />
+
+      {/* dynamic blurred backdrop (PS5 / Apple Music style) */}
+      {game.background_image && (
+        <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <img
+            src={game.background_image}
+            alt=""
+            className="size-full scale-125 object-cover blur-3xl"
+          />
+          <div className="absolute inset-0 bg-background/80" />
+        </div>
+      )}
+
+      {entry && (
+        <GameEditDialog
+          entry={entry}
+          open={editing}
+          onOpenChange={setEditing}
+          onCompleted={() => {
+            setCelebrate(true);
+            setTimeout(() => setCelebrate(false), 4000);
+          }}
+        />
+      )}
+
       <motion.section
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -91,13 +127,20 @@ function GamePage() {
                 variant="secondary"
                 className="rounded-xl"
                 onClick={() => {
+                  buzz(o.v === "completed" ? [40, 60, 40] : 20);
                   addGame(game, o.v);
-                  toast.success(`أُضيفت إلى ${o.l}`);
+                  if (o.v === "completed") setEditing(true);
+                  else toast.success(`أُضيفت إلى ${o.l}`);
                 }}
               >
                 {o.l}
               </Button>
             ))}
+            {entry && (
+              <Button size="sm" className="rounded-xl" onClick={() => setEditing(true)}>
+                تعديل التتبع
+              </Button>
+            )}
             {game.website && (
               <a href={game.website} target="_blank" rel="noreferrer">
                 <Button size="sm" variant="ghost" className="rounded-xl">
@@ -115,10 +158,6 @@ function GamePage() {
         <Info label="تقييم RAWG" value={String(game.rating ?? "—")} />
         <Info label="ميتاكريتيك" value={String(game.metacritic ?? "—")} />
         <Info label="التصنيفات" value={(game.genres ?? []).map((g) => g.name).join("، ") || "—"} />
-        <Info
-          label="المنصات"
-          value={(game.platforms ?? []).map((p) => p.platform.name).join("، ") || "—"}
-        />
         <Info label="التصنيف العمري" value={game.esrb_rating?.name ?? "—"} />
         <Info label="مدة اللعب التقديرية" value={`${num(game.playtime ?? 0)} ساعة`} />
       </section>
