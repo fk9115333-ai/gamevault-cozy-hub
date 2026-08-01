@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import {
   Gamepad2,
@@ -13,9 +12,8 @@ import {
   Shuffle,
   Trophy,
 } from "lucide-react";
-import { useCurrentData, useStore } from "@/lib/store";
+import { useCurrentData, useOtherData, useStore } from "@/lib/store";
 import { computeStats, computeAchievements, activityIcon } from "@/lib/stats";
-import { getUpcoming } from "@/lib/rawg";
 import { gregorian, hijri, num } from "@/lib/dates";
 import { GameCard } from "@/components/GameCard";
 import { StatCard, SectionTitle, EmptyState } from "@/components/ui-bits";
@@ -47,12 +45,11 @@ function Dashboard() {
     .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""))[0];
   const recent = [...data.entries].sort((a, b) => b.addedAt.localeCompare(a.addedAt)).slice(0, 8);
 
-  const { data: upcoming } = useQuery({
-    queryKey: ["upcoming-mini"],
-    queryFn: getUpcoming,
-    staleTime: 1000 * 60 * 60,
-  });
-  const nextRelease = upcoming?.[0];
+  const other = useOtherData();
+  const brotherActivity = other.activities[0] ?? null;
+  const nextRelease = [...data.entries]
+    .filter((e) => e.status === "hype" && e.released)
+    .sort((a, b) => (a.released ?? "").localeCompare(b.released ?? ""))[0];
 
   const pickRandom = () => {
     const pool = data.entries.filter((e) => e.status !== "completed");
@@ -132,18 +129,39 @@ function Dashboard() {
         <StatCard label="متوسط التقييم" value={stats.avgRating} icon={Star} index={7} />
       </section>
 
+      <section className="flex items-center gap-3 overflow-hidden rounded-3xl border border-border bg-card px-5 py-4">
+        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-secondary text-lg">
+          {other.profile.avatar}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] text-muted-foreground">نشاطات {other.profile.name}</p>
+          {brotherActivity ? (
+            <p className="truncate text-sm font-semibold">
+              {activityIcon(brotherActivity.type)} {other.profile.name} {brotherActivity.text}
+            </p>
+          ) : (
+            <p className="truncate text-sm text-muted-foreground">لا نشاط بعد</p>
+          )}
+        </div>
+        {brotherActivity && (
+          <span className="hidden shrink-0 text-[11px] text-muted-foreground sm:block">
+            {gregorian(brotherActivity.at)}
+          </span>
+        )}
+      </section>
+
       {nextRelease && (
         <section className="relative overflow-hidden rounded-[2rem] border border-border p-6">
-          {nextRelease.background_image && (
+          {nextRelease.image && (
             <img
-              src={nextRelease.background_image}
+              src={nextRelease.image}
               alt={nextRelease.name}
               className="absolute inset-0 size-full object-cover opacity-25"
             />
           )}
           <div className="relative flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs text-muted-foreground">العد التنازلي للإصدار القادم</p>
+              <p className="text-xs text-muted-foreground">أقرب لعبة في قائمة الحماس</p>
               <h3 className="font-display text-2xl font-extrabold">{nextRelease.name}</h3>
               <p className="text-xs text-muted-foreground">
                 {gregorian(nextRelease.released)} · {hijri(nextRelease.released)}
