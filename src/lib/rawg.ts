@@ -7,9 +7,9 @@ export const PLATFORMS = "4,18,187,1,186,7";
 /** منصات رئيسية (PC · PlayStation · Xbox · Nintendo) — تستبعد الجوال */
 export const PARENT_PLATFORMS = "1,2,3,7";
 
-/** معرّفات منصات الجوال (iOS · Android) */
-const MOBILE_PLATFORM_IDS = new Set([3, 21]);
-const CORE_PLATFORM_IDS = new Set([4, 18, 187, 1, 186, 7, 14, 16, 15, 27, 8, 9, 10, 5, 6, 83, 24, 43, 11]);
+/** القائمة البيضاء الوحيدة: PC · PS4 · PS5 · Xbox One/Series · Switch */
+const ALLOWED_PLATFORM_IDS = new Set([4, 18, 187, 1, 186, 7]);
+const BANNED_PLATFORM_SLUGS = /android|ios|web|mobile/i;
 
 export type RawgGame = {
   id: number;
@@ -20,6 +20,8 @@ export type RawgGame = {
   background_image: string | null;
   background_image_additional?: string | null;
   rating: number;
+  ratings_count?: number;
+  added?: number;
   metacritic: number | null;
   playtime?: number;
   website?: string;
@@ -51,13 +53,15 @@ const DLC_NOISE =
 
 export const isBaseGame = (name: string) => !EDITION_NOISE.test(name) && !DLC_NOISE.test(name);
 
-/** ألعاب الجوال ممنوعة — نقبل فقط ما يصدر على PC أو الأجهزة المنزلية */
+/** قائمة بيضاء صارمة: أي منصة جوال/ويب أو منصة خارج المحدد ترفض اللعبة كاملة. */
 export const isCoreGame = (g: RawgGame) => {
-  const ids = (g.platforms ?? []).map((p) => p.platform.id);
-  if (!ids.length) return true;
-  if (!ids.some((id) => CORE_PLATFORM_IDS.has(id))) return false;
-  // لعبة جوال بحتة (iOS/Android فقط)
-  return !ids.every((id) => MOBILE_PLATFORM_IDS.has(id));
+  const platforms = g.platforms ?? [];
+  if (!platforms.length) return false;
+  return platforms.every(
+    ({ platform }) =>
+      ALLOWED_PLATFORM_IDS.has(platform.id) &&
+      !BANNED_PLATFORM_SLUGS.test(`${platform.slug} ${platform.name}`),
+  );
 };
 
 /** فلترة موحّدة: لعبة أساسية + منصات رئيسية */
@@ -100,16 +104,73 @@ export const getTrending = () =>
     dates: `${new Date().getFullYear() - 2}-01-01,${new Date().toISOString().slice(0, 10)}`,
   }).then((d) => cleanList(d.results));
 
-/** توصيات ذكية بناءً على أنواع الألعاب المكتملة — أو أفضل الألعاب عند عدم وجود سجل */
-export const getRecommended = (genreSlugs: string[] = []) =>
-  rawg<{ results: RawgGame[] }>("/games", {
+const CURATED_AAA_SLUGS = [
+  "god-of-war-ragnarok",
+  "elden-ring",
+  "cyberpunk-2077",
+  "baldurs-gate-3",
+  "marvels-spider-man-2",
+  "red-dead-redemption-2",
+  "ghost-of-tsushima",
+] as const;
+
+const PREMIUM_GENRES = new Set(["action", "role-playing-games-rpg", "adventure", "shooter"]);
+
+/** بوابة جودة إضافية تمنع الألعاب العشوائية أو الخفيفة من صف التوصيات. */
+const isPremiumRecommendation = (game: RawgGame) => {
+  const genreMatch = (game.genres ?? []).some((genre) => PREMIUM_GENRES.has(genre.slug));
+  const criticallyAcclaimed = (game.metacritic ?? 0) >= 82;
+  const broadlyRated = game.rating >= 4.1 && (game.ratings_count ?? 0) >= 750;
+  return isBaseGame(game.name) && isCoreGame(game) && !!game.background_image && genreMatch && (criticallyAcclaimed || broadlyRated);
+};
+
+export type RecommendationExclusions = {
+  ids?: Iterable<number>;
+  names?: Iterable<string>;
+};
+
+const normalizedName = (name: string) => name.trim().toLocaleLowerCase();
+
+/**
+ * توصيات ثقيلة وموثوقة: نتائج شخصية عالية التقييم، ثم قائمة AAA منتقاة كضمان.
+ * الاستبعاد يطبق هنا، ويعاد تطبيقه في الواجهة كطبقة أمان ثانية.
+ */
+export const getRecommended = async (
+  genreSlugs: string[] = [],
+  exclusions: RecommendationExclusions = {},
+) => {
+  const excludedIds = new Set(exclusions.ids ?? []);
+  const excludedNames = new Set(
+    [...(exclusions.names ?? [])].map(normalizedName),
+  );
+  const excludeOwned = (game: RawgGame) =>
+    !excludedIds.has(game.id) && !excludedNames.has(normalizedName(game.name));
+
+  const dynamicRequest = rawg<{ results: RawgGame[] }>("/games", {
     ...(genreSlugs.length ? { genres: genreSlugs.slice(0, 4).join(",") } : {}),
     ordering: "-metacritic",
     metacritic: "82,100",
-    page_size: 30,
+    page_size: 40,
     platforms: PLATFORMS,
     parent_platforms: PARENT_PLATFORMS,
     exclude_collection: "true",
     exclude_additions: "true",
     dates: `${new Date().getFullYear() - 12}-01-01,${new Date().toISOString().slice(0, 10)}`,
-  }).then((d) => cleanList(d.results).filter((g) => !!g.background_image));
+  })
+    .then(({ results }) => results.filter(isPremiumRecommendation))
+    .catch(() => [] as RawgGame[]);
+
+  const curatedRequest = Promise.allSettled(
+    CURATED_AAA_SLUGS.map((slug) => rawg<RawgGame>(`/games/${slug}`)),
+  ).then((results) =>
+    results.flatMap((result) =>
+      result.status === "fulfilled" && isPremiumRecommendation(result.value) ? [result.value] : [],
+    ),
+  );
+
+  const [dynamic, curated] = await Promise.all([dynamicRequest, curatedRequest]);
+  const merged = [...dynamic, ...curated];
+  const unique = new Map<number, RawgGame>();
+  for (const game of merged) if (excludeOwned(game) && !unique.has(game.id)) unique.set(game.id, game);
+  return [...unique.values()].slice(0, 18);
+};

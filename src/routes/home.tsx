@@ -84,16 +84,31 @@ function Dashboard() {
       .map(([g]) => g.toLowerCase().replace(/\s+/g, "-"));
   }, [data.entries]);
 
+  /** كل لعبة مملوكة مستبعدة، بما فيها اللعب الحالي والانتظار والمكتملة. */
+  const ownedIds = useMemo(() => data.entries.map((entry) => entry.id), [data.entries]);
+  const ownedNames = useMemo(() => data.entries.map((entry) => entry.name), [data.entries]);
+
   const { data: recommended = [] } = useQuery({
-    queryKey: ["recommended", topGenres],
-    queryFn: () => getRecommended(topGenres),
+    queryKey: ["recommended", topGenres, ownedIds, ownedNames],
+    queryFn: () => getRecommended(topGenres, { ids: ownedIds, names: ownedNames }),
     staleTime: 1000 * 60 * 30,
   });
 
-  const owned = useMemo(() => new Set(data.entries.map((e) => e.id)), [data.entries]);
+  const owned = useMemo(() => new Set(ownedIds), [ownedIds]);
+  const ownedByName = useMemo(
+    () => new Set(ownedNames.map((name) => name.trim().toLocaleLowerCase())),
+    [ownedNames],
+  );
   const trending = useMemo(
-    () => recommended.filter((g) => !owned.has(g.id)).slice(0, 14),
-    [recommended, owned],
+    () =>
+      recommended
+        .filter(
+          (game) =>
+            !owned.has(game.id) &&
+            !ownedByName.has(game.name.trim().toLocaleLowerCase()),
+        )
+        .slice(0, 14),
+    [recommended, owned, ownedByName],
   );
 
   const gotm = gameOfMonth(data.entries);
