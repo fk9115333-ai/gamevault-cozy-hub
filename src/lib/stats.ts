@@ -238,4 +238,223 @@ export const COLLECTIONS: { name: string; match: (e: GameEntry) => boolean }[] =
 ];
 
 export const activityIcon = (t: Activity["type"]) =>
-  ({ start: "▶️", finish: "🏁", add: "➕", favorite: "⭐", achievement: "🏅", goal: "🎯" })[t];
+  ({
+    start: "▶️",
+    finish: "🏁",
+    add: "➕",
+    favorite: "⭐",
+    achievement: "🏅",
+    goal: "🎯",
+    rate: "⭐️",
+    platinum: "🏆",
+    session: "⏱️",
+  })[t] ?? "•";
+
+/* ============================ نظام المستويات ============================ */
+
+/** XP = ساعة واحدة = 10 نقاط، لعبة مكتملة = 150 نقطة، بلاتينيوم = 250 */
+export function computeLevel(entries: GameEntry[]) {
+  const hours = entries.reduce((s, e) => s + (e.hours || 0), 0);
+  const completed = entries.filter((e) => e.status === "completed").length;
+  const platinum = entries.filter((e) => e.fullCompletion).length;
+  const xp = Math.round(hours * 10 + completed * 150 + platinum * 250);
+  // منحنى: مستوى n يحتاج 150 * n^1.6
+  const need = (n: number) => Math.round(150 * Math.pow(n, 1.6));
+  let level = 1;
+  while (level < 99 && xp >= need(level + 1)) level += 1;
+  const curr = need(level);
+  const nextNeed = need(level + 1);
+  const pct = Math.min(100, ((xp - curr) / Math.max(1, nextNeed - curr)) * 100);
+  return { xp, level, pct, toNext: Math.max(0, nextNeed - xp) };
+}
+
+/* ============================ ودجات اللوحة ============================ */
+
+/** لعبة الشهر: الأكثر لعبًا خلال الشهر الحالي (جلسات، وإلا آخر ما بدأ/ختم) */
+export function gameOfMonth(entries: GameEntry[]): { game: GameEntry; hours: number } | null {
+  const key = new Date().toISOString().slice(0, 7);
+  const scored = entries
+    .map((e) => {
+      const sessionHours =
+        e.sessions
+          ?.filter((s) => s.date?.startsWith(key))
+          .reduce((s, x) => s + x.minutes / 60, 0) ?? 0;
+      const touched =
+        e.completedAt?.startsWith(key) || e.startedAt?.startsWith(key) ? e.hours : 0;
+      return { game: e, hours: sessionHours || touched };
+    })
+    .filter((x) => x.hours > 0)
+    .sort((a, b) => b.hours - a.hours);
+  return scored[0] ?? null;
+}
+
+export type Memory = { text: string; game: GameEntry };
+
+/** صندوق الذكريات: أحداث في مثل هذا اليوم من سنوات سابقة */
+export function memoryBox(entries: GameEntry[]): Memory[] {
+  const now = new Date();
+  const md = (d: string) => d.slice(5, 10);
+  const today = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const out: Memory[] = [];
+  entries.forEach((e) => {
+    const check = (date: string | null, verb: string) => {
+      if (!date) return;
+      const d = new Date(date);
+      const years = now.getFullYear() - d.getFullYear();
+      if (years >= 1 && md(date) === today)
+        out.push({
+          text: `في مثل هذا اليوم قبل ${years === 1 ? "سنة" : `${years} سنوات`} ${verb} «${e.name}»`,
+          game: e,
+        });
+    };
+    check(e.startedAt, "بدأت");
+    check(e.completedAt, "ختمت");
+  });
+  return out.slice(0, 3);
+}
+
+/** توصية ذكية من قائمة الانتظار بناءً على آخر لعبة مكتملة */
+export function recommendation(entries: GameEntry[]): { game: GameEntry; reason: string } | null {
+  const pool = entries.filter((e) => e.status === "backlog" || e.status === "next");
+  if (!pool.length) return null;
+  const lastCompleted = entries
+    .filter((e) => e.status === "completed" && e.completedAt)
+    .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""))[0];
+
+  if (lastCompleted) {
+    const sameFranchise = FRANCHISE_SERIES.find((f) => f.match.test(lastCompleted.name));
+    if (sameFranchise) {
+      const nextInSeries = pool.find((e) => sameFranchise.match.test(e.name));
+      if (nextInSeries)
+        return {
+          game: nextInSeries,
+          reason: `لأنك أنهيت «${lastCompleted.name}» من نفس السلسلة`,
+        };
+    }
+    const sharedGenre = pool.find((e) => e.genres.some((g) => lastCompleted.genres.includes(g)));
+    if (sharedGenre) {
+      const days = Math.round(
+        (Date.now() - new Date(lastCompleted.completedAt as string).getTime()) / 86400000,
+      );
+      return {
+        game: sharedGenre,
+        reason: `أنهيت «${lastCompleted.name}» قبل ${days} يوم، وهي من نفس النوع`,
+      };
+    }
+  }
+  const shortest = [...pool].sort(
+    (a, b) => (a.playtimeEstimate || 99) - (b.playtimeEstimate || 99),
+  )[0];
+  return shortest ? { game: shortest, reason: "أقصر لعبة في قائمتك — بداية سهلة" } : null;
+}
+
+/* ============================ الملخص السنوي ============================ */
+
+export function computeWrap(entries: GameEntry[], year: number) {
+  const inYear = entries.filter((e) => e.completedAt?.startsWith(String(year)));
+  const hoursOfYear = inYear.reduce((s, e) => s + e.hours, 0);
+  const rated = inYear.filter((e) => e.personalRating > 0).sort((a, b) => b.personalRating - a.personalRating);
+  const months = new Map<string, number>();
+  inYear.forEach((e) => {
+    const k = e.completedAt!.slice(0, 7);
+    months.set(k, (months.get(k) ?? 0) + e.hours);
+  });
+  const franchises = computeFranchises(inYear).sort((a, b) => b.hours - a.hours);
+
+  // خريطة الحرارة: ساعات لكل يوم من أيام السنة
+  const heat = new Map<string, number>();
+  entries.forEach((e) => {
+    (e.sessions ?? []).forEach((s) => {
+      if (s.date?.startsWith(String(year))) heat.set(s.date, (heat.get(s.date) ?? 0) + s.minutes / 60);
+    });
+    if (e.completedAt?.startsWith(String(year))) {
+      const d = e.completedAt.slice(0, 10);
+      if (!(e.sessions ?? []).length) heat.set(d, (heat.get(d) ?? 0) + Math.min(e.hours, 8));
+    }
+  });
+
+  return {
+    year,
+    games: inYear.length,
+    hours: hoursOfYear,
+    best: rated[0] ?? null,
+    worst: rated.length > 1 ? rated[rated.length - 1] : null,
+    topMonth: [...months.entries()].sort((a, b) => b[1] - a[1])[0] ?? null,
+    topFranchise: franchises[0] ?? null,
+    platinum: inYear.filter((e) => e.fullCompletion).length,
+    heat,
+  };
+}
+
+/** أيام السنة كشبكة أسابيع (لخريطة الحرارة) */
+export function yearGrid(year: number) {
+  const days: { date: string; dow: number }[] = [];
+  const d = new Date(Date.UTC(year, 0, 1));
+  while (d.getUTCFullYear() === year) {
+    days.push({ date: d.toISOString().slice(0, 10), dow: d.getUTCDay() });
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  const weeks: ({ date: string; dow: number } | null)[][] = [];
+  let week: ({ date: string; dow: number } | null)[] = Array(days[0]!.dow).fill(null);
+  days.forEach((day) => {
+    week.push(day);
+    if (week.length === 7) {
+      weeks.push(week);
+      week = [];
+    }
+  });
+  if (week.length) weeks.push([...week, ...Array(7 - week.length).fill(null)]);
+  return weeks;
+}
+
+/* ============================ السلاسل ============================ */
+
+export function findFranchise(gameName: string) {
+  return FRANCHISE_SERIES.find((f) => f.match.test(gameName)) ?? null;
+}
+
+export type FranchiseTimelineItem = {
+  title: string;
+  entry: GameEntry | null;
+  state: "done" | "playing" | "none";
+};
+
+export function franchiseTimeline(
+  franchiseName: string,
+  entries: GameEntry[],
+): { name: string; items: FranchiseTimelineItem[]; pct: number } | null {
+  const f = FRANCHISE_SERIES.find((x) => x.name === franchiseName);
+  if (!f) return null;
+  const owned = entries.filter((e) => f.match.test(e.name));
+  const titles = [...f.order];
+  owned.forEach((e) => {
+    if (!titles.some((t) => norm(t) === norm(e.name))) titles.push(e.name);
+  });
+  const items: FranchiseTimelineItem[] = titles.map((title) => {
+    const entry = owned.find((e) => norm(e.name) === norm(title)) ?? null;
+    return {
+      title,
+      entry,
+      state:
+        entry?.status === "completed" ? "done" : entry?.status === "current" ? "playing" : "none",
+    };
+  });
+  const done = items.filter((i) => i.state === "done").length;
+  return { name: f.name, items, pct: items.length ? (done / items.length) * 100 : 0 };
+}
+
+/** ألعاب قاعة المشاهير: 9.5+ أو مُعلّمة يدويًا */
+export const hallOfFameGames = (entries: GameEntry[]) =>
+  entries
+    .filter((e) => e.hallOfFame || e.personalRating >= 9.5)
+    .sort((a, b) => b.personalRating - a.personalRating);
+
+export const hallBadge = (e: GameEntry) => {
+  if (e.genres.some((g) => /horror/i.test(g))) return "أفضل لعبة رعب";
+  if (e.genres.some((g) => /rpg/i.test(g))) return "أفضل RPG";
+  if (e.genres.some((g) => /shooter/i.test(g))) return "أفضل تصويب";
+  if (e.genres.some((g) => /adventure/i.test(g))) return "أفضل مغامرة";
+  if (e.coop) return "أفضل لعبة سوا";
+  return "أسطورة شخصية";
+};
+
