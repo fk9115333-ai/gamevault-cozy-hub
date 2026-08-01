@@ -156,9 +156,10 @@ function LibraryPage() {
         {!list.length ? (
           <EmptyState text="لا توجد ألعاب هنا بعد." />
         ) : tab === "completed" ? (
-          <div className="space-y-3">
+          <div className="flex w-full flex-col gap-4">
             {list.map((e) => (
-              <div key={e.id} className="relative">
+              <div key={e.id} className="relative w-full">
+
                 <CompletedCard entry={e} onOpen={() => setReviewed(e)} />
                 <GameEditDialog
                   entry={e}
