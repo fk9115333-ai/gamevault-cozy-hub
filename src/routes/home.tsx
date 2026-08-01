@@ -164,7 +164,8 @@ function Dashboard() {
               <LogSessionSheet
                 entry={hero}
                 trigger={
-                  <Button className="w-fit rounded-2xl bg-[var(--gradient-primary)] text-primary-foreground shadow-[0_0_25px_-6px_rgba(234,179,8,0.6)]">
+                  <Button className="h-12 w-fit rounded-2xl border-2 border-yellow-300/70 bg-primary px-6 font-display text-base font-black text-primary-foreground shadow-[0_0_35px_-4px_rgba(234,179,8,0.95)] hover:bg-primary/90">
+
                     <PlayCircle className="size-4" /> تسجيل جلسة
                   </Button>
                 }
