@@ -1,4 +1,11 @@
-import type { GameEntry, Activity } from "./store";
+import { DIFFICULTIES, type GameEntry, type Activity, type Difficulty } from "./store";
+
+/** الألعاب المختومة قديمًا تُستثنى من كل المعدلات والخرائط الزمنية */
+export const activeEntries = (entries: GameEntry[]) => entries.filter((e) => !e.legacy);
+
+const DIFF_RANK: Record<Difficulty, number> = { easy: 1, normal: 2, hard: 3, extreme: 4 };
+export const difficultyMult = (d: Difficulty | undefined) =>
+  DIFFICULTIES.find((x) => x.v === (d ?? "normal"))?.mult ?? 1;
 
 export const byStatus = (entries: GameEntry[], status: GameEntry["status"]) =>
   entries.filter((e) => e.status === status);
@@ -21,14 +28,22 @@ export function computeStats(entries: GameEntry[]) {
 
   // الرسوم الزمنية تُقرأ من تاريخ الختم الفعلي
   const monthly = new Map<string, { games: number; hours: number }>();
-  completed.forEach((e) => {
+  const liveCompleted = completed.filter((e) => !e.legacy);
+  const liveHours = entries.filter((e) => !e.legacy).reduce((s, e) => s + (e.hours || 0), 0);
+  const hardest =
+    [...completed].sort(
+      (a, b) =>
+        DIFF_RANK[b.difficulty ?? "normal"] - DIFF_RANK[a.difficulty ?? "normal"] ||
+        b.hours - a.hours,
+    )[0] ?? null;
+  liveCompleted.forEach((e) => {
     if (!e.completedAt) return;
     const k = e.completedAt.slice(0, 7);
     const prev = monthly.get(k) ?? { games: 0, hours: 0 };
     monthly.set(k, { games: prev.games + 1, hours: prev.hours + e.hours });
   });
 
-  const firstAt = [...entries].sort((a, b) => a.addedAt.localeCompare(b.addedAt))[0]?.addedAt;
+  const firstAt = [...entries.filter((e) => !e.legacy)].sort((a, b) => a.addedAt.localeCompare(b.addedAt))[0]?.addedAt;
   const days = firstAt
     ? Math.max(1, Math.ceil((Date.now() - new Date(firstAt).getTime()) / 86400000))
     : 1;
@@ -51,8 +66,11 @@ export function computeStats(entries: GameEntry[]) {
     monthly: [...monthly.entries()].sort().map(([month, v]) => ({ month, ...v })),
     backlogHours: backlog.reduce((s, e) => s + (e.playtimeEstimate || 10), 0),
     mostActiveMonth: [...monthly.entries()].sort((a, b) => b[1].games - a[1].games)[0]?.[0] ?? "—",
-    avgDailyHours: hours / days,
-    avgMonthlyCompleted: completed.length / months,
+    liveHours,
+    liveCompleted: liveCompleted.length,
+    hardest,
+    avgDailyHours: liveHours / days,
+    avgMonthlyCompleted: liveCompleted.length / months,
   };
 }
 
@@ -250,12 +268,17 @@ export const activityIcon = (t: Activity["type"]) =>
 
 /* ============================ نظام المستويات ============================ */
 
-/** XP = ساعة واحدة = 10 نقاط، لعبة مكتملة = 150 نقطة، بلاتينيوم = 250 */
+/** XP: ساعة = 10 نقاط، لعبة مكتملة = 150 × معامل الصعوبة (+ طولها)، بلاتينيوم = 250 */
 export function computeLevel(entries: GameEntry[]) {
   const hours = entries.reduce((s, e) => s + (e.hours || 0), 0);
-  const completed = entries.filter((e) => e.status === "completed").length;
+  const completedGames = entries.filter((e) => e.status === "completed");
   const platinum = entries.filter((e) => e.fullCompletion).length;
-  const xp = Math.round(hours * 10 + completed * 150 + platinum * 250);
+  const completionXp = completedGames.reduce((sum, e) => {
+    const mult = difficultyMult(e.difficulty);
+    const length = Math.min(120, e.hours || e.playtimeEstimate || 0);
+    return sum + (150 + length * 4) * mult;
+  }, 0);
+  const xp = Math.round(hours * 10 + completionXp + platinum * 250);
   // منحنى: مستوى n يحتاج 150 * n^1.6
   const need = (n: number) => Math.round(150 * Math.pow(n, 1.6));
   let level = 1;
@@ -349,7 +372,7 @@ export function recommendation(entries: GameEntry[]): { game: GameEntry; reason:
 /* ============================ الملخص السنوي ============================ */
 
 export function computeWrap(entries: GameEntry[], year: number) {
-  const inYear = entries.filter((e) => e.completedAt?.startsWith(String(year)));
+  const inYear = entries.filter((e) => !e.legacy && e.completedAt?.startsWith(String(year)));
   const hoursOfYear = inYear.reduce((s, e) => s + e.hours, 0);
   const rated = inYear.filter((e) => e.personalRating > 0).sort((a, b) => b.personalRating - a.personalRating);
   const months = new Map<string, number>();
@@ -361,7 +384,7 @@ export function computeWrap(entries: GameEntry[], year: number) {
 
   // خريطة الحرارة: ساعات لكل يوم من أيام السنة
   const heat = new Map<string, number>();
-  entries.forEach((e) => {
+  entries.filter((e) => !e.legacy).forEach((e) => {
     (e.sessions ?? []).forEach((s) => {
       if (s.date?.startsWith(String(year))) heat.set(s.date, (heat.get(s.date) ?? 0) + s.minutes / 60);
     });
