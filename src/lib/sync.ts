@@ -173,7 +173,7 @@ export async function pullAll(): Promise<CloudSnapshot | null> {
       bio: String(r["bio"] ?? ""),
       favoriteGame: String(r["favorite_game"] ?? "—"),
       favoriteGenre: String(r["favorite_genre"] ?? "—"),
-      gamingStartDate: (r["gaming_start_date"] as string | null) ?? null,
+      
     };
   });
 
