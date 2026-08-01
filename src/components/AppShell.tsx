@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { SmartSearch } from "./SmartSearch";
 import { UserSwitcher } from "./UserSwitcher";
 import { UserAvatar } from "./UserAvatar";
+import logoUrl from "@/assets/gamehub-logo.png";
 import type { ReactNode } from "react";
 
 /** التنقل السفلي: 4 تبويبات (من اليمين لليسار، الإعدادات في أقصى اليسار) */
@@ -68,6 +69,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div dir="rtl" className="min-h-screen">
       <div className="mx-auto flex w-full max-w-[1600px] gap-6 px-3 pb-32 pt-4 md:px-6 lg:pb-8">
         <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-64 shrink-0 flex-col rounded-3xl glass p-4 lg:flex">
+          <div className="mb-4 flex items-center gap-3 px-2">
+            <img
+              src={logoUrl}
+              alt="شعار GameHub"
+              width={40}
+              height={40}
+              className="size-10 rounded-xl ring-1 ring-primary/40"
+            />
+            <span className="font-display text-xl font-black tracking-tight gold-glow">GameHub</span>
+          </div>
           <Link to="/profile" className="mb-6 flex items-center gap-3 px-2">
             <UserAvatar value={profile.avatar} size={40} />
             <span className="font-display text-lg font-extrabold">مرحباً {profile.name}</span>
@@ -102,7 +113,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main className="min-w-0 flex-1">
           <header className="mb-5 flex items-center gap-3">
+            <img
+              src={logoUrl}
+              alt="شعار GameHub"
+              width={36}
+              height={36}
+              className="size-9 shrink-0 rounded-xl ring-1 ring-primary/40 lg:hidden"
+            />
             <Link to="/profile" className="lg:hidden">
+
               <UserAvatar value={profile.avatar} size={40} />
             </Link>
             <div className="min-w-0 flex-1">
