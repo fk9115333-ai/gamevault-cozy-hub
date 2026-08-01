@@ -5,8 +5,6 @@ import {
   Library,
   CalendarClock,
   BarChart3,
-  Trophy,
-  Users,
   Settings2,
   Sparkles,
 } from "lucide-react";
@@ -14,18 +12,23 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { SmartSearch } from "./SmartSearch";
 import { UserSwitcher } from "./UserSwitcher";
+import { WelcomeDialog } from "./WelcomeDialog";
 import type { ReactNode } from "react";
 
-const nav = [
+/** التنقل السفلي: 4 تبويبات فقط */
+const mainNav = [
   { to: "/", label: "الرئيسية", icon: LayoutDashboard },
   { to: "/library", label: "المكتبة", icon: Library },
   { to: "/upcoming", label: "المرتقبة", icon: CalendarClock },
   { to: "/stats", label: "الإحصائيات", icon: BarChart3 },
-  { to: "/achievements", label: "الإنجازات", icon: Trophy },
-  { to: "/compare", label: "المقارنة", icon: Users },
+] as const;
+
+const nav = [
+  ...mainNav,
   { to: "/profile", label: "الملف الشخصي", icon: Sparkles },
   { to: "/settings", label: "الإعدادات", icon: Settings2 },
 ] as const;
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -33,6 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div dir="rtl" className="min-h-screen">
+      <WelcomeDialog />
       <div className="mx-auto flex w-full max-w-[1600px] gap-6 px-3 pb-28 pt-4 md:px-6 lg:pb-8">
         <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-64 shrink-0 flex-col rounded-3xl glass p-4 lg:flex">
           <Link to="/" className="mb-6 flex items-center gap-3 px-2">
@@ -94,15 +98,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-1 overflow-x-auto glass px-2 py-2 no-scrollbar lg:hidden">
-        {nav.map((item) => {
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-1 glass px-2 py-2 lg:hidden">
+        {mainNav.map((item) => {
           const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
           return (
             <Link
               key={item.to}
               to={item.to}
               className={cn(
-                "flex min-w-[68px] flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] transition-colors",
+                "flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] transition-colors",
                 active ? "bg-secondary/70 text-primary" : "text-muted-foreground",
               )}
             >

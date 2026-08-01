@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getGame, getScreenshots, getSimilar } from "@/lib/rawg";
-import { gregorian, hijri, num } from "@/lib/dates";
+import { gregorian, hijri } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import { useStore, type Status } from "@/lib/store";
 import { GameEditDialog } from "@/components/GameEditDialog";
@@ -111,6 +111,21 @@ function GamePage() {
         )}
         <div className="relative bg-gradient-to-t from-card via-card/70 to-transparent p-6 pt-40 md:p-10 md:pt-56">
           <h1 className="font-display text-3xl font-black md:text-5xl">{game.name}</h1>
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {(game.genres ?? []).map((g) => (
+              <span
+                key={g.id}
+                className="rounded-full bg-secondary/70 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground"
+              >
+                {g.name}
+              </span>
+            ))}
+            {game.metacritic && (
+              <span className="rounded-full bg-primary/15 px-2.5 py-1 text-[11px] font-bold text-primary">
+                ميتاكريتيك {game.metacritic}
+              </span>
+            )}
+          </div>
           <p className="mt-2 text-sm text-muted-foreground">
             {gregorian(game.released)} · {hijri(game.released)}
           </p>
@@ -152,15 +167,17 @@ function GamePage() {
         </div>
       </motion.section>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Info label="المطوّر" value={game.developers?.[0]?.name ?? "—"} />
-        <Info label="الناشر" value={game.publishers?.[0]?.name ?? "—"} />
-        <Info label="تقييم RAWG" value={String(game.rating ?? "—")} />
-        <Info label="ميتاكريتيك" value={String(game.metacritic ?? "—")} />
-        <Info label="التصنيفات" value={(game.genres ?? []).map((g) => g.name).join("، ") || "—"} />
-        <Info label="التصنيف العمري" value={game.esrb_rating?.name ?? "—"} />
-        <Info label="مدة اللعب التقديرية" value={`${num(game.playtime ?? 0)} ساعة`} />
-      </section>
+      {entry && (entry.review || entry.notes) && (
+        <section className="rounded-3xl border border-border bg-card p-6">
+          <h2 className="mb-2 font-display text-lg font-bold">ملاحظاتك</h2>
+          {entry.review && <p className="text-sm leading-7">{entry.review}</p>}
+          {entry.notes && (
+            <p className="mt-2 whitespace-pre-line text-sm leading-7 text-muted-foreground">
+              {entry.notes}
+            </p>
+          )}
+        </section>
+      )}
 
       {game.description_raw && (
         <section className="rounded-3xl border border-border bg-card p-6">
@@ -213,15 +230,6 @@ function GamePage() {
           </div>
         </section>
       )}
-    </div>
-  );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm font-bold">{value}</p>
     </div>
   );
 }
