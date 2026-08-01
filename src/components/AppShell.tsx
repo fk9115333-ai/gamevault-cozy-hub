@@ -106,7 +106,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex min-w-[68px] flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] transition-colors",
+                "flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] transition-colors",
                 active ? "bg-secondary/70 text-primary" : "text-muted-foreground",
               )}
             >
