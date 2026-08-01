@@ -67,6 +67,8 @@ function Dashboard() {
   const users = useStore((s) => s.users);
   const currentUser = useStore((s) => s.currentUser);
   const updateGame = useStore((s) => s.updateGame);
+  const addGame = useStore((s) => s.addGame);
+
 
   const hero = data.entries.find((e) => e.status === "current") ?? null;
   const [reviewed, setReviewed] = useState<GameEntry | null>(null);
