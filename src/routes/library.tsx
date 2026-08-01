@@ -1,16 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useCurrentData, useStore, type GameEntry, type Status } from "@/lib/store";
+import { useCurrentData, type GameEntry, type Status } from "@/lib/store";
 import { GameCard } from "@/components/GameCard";
 import { GameEditDialog } from "@/components/GameEditDialog";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { EmptyState, SectionTitle } from "@/components/ui-bits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, ChevronUp, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { num } from "@/lib/dates";
-import { buzz } from "@/lib/haptics";
 import { computeFranchises } from "@/lib/stats";
+
 
 export const Route = createFileRoute("/library")({
   head: () => ({
