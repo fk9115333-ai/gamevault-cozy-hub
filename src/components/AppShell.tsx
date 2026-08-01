@@ -19,11 +19,12 @@ import { UserSwitcher } from "./UserSwitcher";
 import { UserAvatar } from "./UserAvatar";
 import type { ReactNode } from "react";
 
-/** التنقل السفلي: 3 تبويبات (من اليمين لليسار) */
+/** التنقل السفلي: 4 تبويبات (من اليمين لليسار، الإعدادات في أقصى اليسار) */
 const mainNav = [
   { to: "/home", label: "الرئيسية", icon: LayoutDashboard },
   { to: "/library", label: "المكتبة", icon: Library },
   { to: "/upcoming", label: "الخطة", icon: CalendarClock },
+  { to: "/settings", label: "الإعدادات", icon: Settings2 },
 ] as const;
 
 const nav = [
@@ -33,8 +34,8 @@ const nav = [
   { to: "/timeline", label: "الخط الزمني", icon: ActivityIcon },
   { to: "/hall", label: "أفضل 10 ألعاب", icon: Crown },
   { to: "/wrap", label: "ملخص السنة", icon: PartyPopper },
-  { to: "/settings", label: "الإعدادات", icon: Settings2 },
 ] as const;
+
 
 
 function LevelBar() {

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Countdown } from "@/components/Countdown";
 import { motion } from "motion/react";
 import { ExternalLink } from "lucide-react";
+import { Lightbox } from "@/components/Lightbox";
 
 export const Route = createFileRoute("/game/$id")({
   head: () => ({
@@ -38,6 +39,7 @@ function GamePage() {
   const addGame = useStore((s) => s.addGame);
   const [editing, setEditing] = useState(false);
   const [celebrated, setCelebrated] = useState<GameEntry | null>(null);
+  const [shotIndex, setShotIndex] = useState<number | null>(null);
   const entry = useStore(
     (s) => s.users[s.currentUser].entries.find((e) => e.id === Number(id)) ?? null,
   );
@@ -188,18 +190,33 @@ function GamePage() {
         <section>
           <h2 className="mb-3 font-display text-lg font-bold">الصور</h2>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            {shots.map((s) => (
-              <img
+            {shots.map((s, i) => (
+              <button
                 key={s.id}
-                src={s.image}
-                alt={game.name}
-                loading="lazy"
-                className="aspect-video w-full rounded-2xl object-cover surface-hover"
-              />
+                type="button"
+                onClick={() => setShotIndex(i)}
+                className="overflow-hidden rounded-2xl surface-hover"
+                aria-label="عرض الصورة بملء الشاشة"
+              >
+                <img
+                  src={s.image}
+                  alt={game.name}
+                  loading="lazy"
+                  className="aspect-video w-full object-cover"
+                />
+              </button>
             ))}
           </div>
+          <Lightbox
+            images={shots.map((s) => s.image)}
+            index={shotIndex}
+            alt={game.name}
+            onIndexChange={setShotIndex}
+            onClose={() => setShotIndex(null)}
+          />
         </section>
       )}
+
 
       {!!similar?.length && (
         <section>

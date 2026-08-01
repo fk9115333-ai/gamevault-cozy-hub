@@ -17,11 +17,13 @@ import { activityIcon, gameOfMonth, memoryBox, computeStats, computeLevel } from
 import { hijri, num } from "@/lib/dates";
 import { SectionTitle } from "@/components/ui-bits";
 import { LogSessionSheet } from "@/components/GameEditDialog";
-import { Rail, RailCard } from "@/components/Rail";
+import { Rail, PosterCard } from "@/components/Rail";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
+import { buzz } from "@/lib/haptics";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -61,10 +63,14 @@ function Dashboard() {
   const other = useOtherData();
   const users = useStore((s) => s.users);
   const currentUser = useStore((s) => s.currentUser);
+  const updateGame = useStore((s) => s.updateGame);
 
   const hero = data.entries.find((e) => e.status === "current") ?? null;
   const [reviewed, setReviewed] = useState<GameEntry | null>(null);
-  const playing = useMemo(() => data.entries.filter((e) => e.status === "current"), [data.entries]);
+  const trending = useMemo(
+    () => data.entries.filter((e) => e.status === "backlog" || e.status === "hype").slice(0, 14),
+    [data.entries],
+  );
   const gotm = gameOfMonth(data.entries);
   const memories = memoryBox(data.entries);
   const stats = computeStats(data.entries);
@@ -195,42 +201,23 @@ function Dashboard() {
       {/* صفوف سينمائية أفقية */}
       <CelebrationModal game={reviewed} review onClose={() => setReviewed(null)} />
 
-      {!!playing.length && (
-        <Rail
-          title="مواصلة اللعب"
-          subtitle="ألعابك النشطة الآن"
-          action={
-            <Link to="/library" className="text-xs text-primary">
-              الكل
-            </Link>
-          }
-        >
-          {playing.map((e, i) => (
-            <RailCard
+      {!!trending.length && (
+        <Rail title="الأكثر رواجاً" subtitle="مقترحات من قائمتك — أضفها لقيد اللعب">
+          {trending.map((e, i) => (
+            <PosterCard
               key={e.id}
               entry={e}
               index={i}
-              vip
-              action={
-                <LogSessionSheet
-                  entry={e}
-                  trigger={
-                    <Button
-                      size="sm"
-                      className="w-full rounded-xl border-2 border-yellow-300/70 bg-primary font-bold text-primary-foreground shadow-[0_0_25px_-8px_rgba(234,179,8,0.9)] hover:bg-primary/90"
-                    >
-                      <PlayCircle className="size-4" /> تسجيل الجلسة
-                    </Button>
-                  }
-                />
-              }
+              quickLabel="ابدأ اللعب"
+              onQuick={() => {
+                buzz(40);
+                updateGame(e.id, { status: "current" });
+                toast.success(`«${e.name}» صارت قيد اللعب`);
+              }}
             />
           ))}
         </Rail>
       )}
-
-
-
 
       {/* B — تحدي الأسبوع */}
       <section>
@@ -272,45 +259,6 @@ function Dashboard() {
                   ? `${other.profile.name} متقدم عليك… الحقه!`
                   : "تعادل! الجولة القادمة تحسم"}
           </p>
-        </div>
-      </section>
-
-      {/* C — نبض الألعاب */}
-      <section>
-        <SectionTitle
-          title="نبض الألعاب"
-          subtitle="آخر نشاطاتكم"
-          action={
-            <Link to="/timeline" className="text-xs text-primary">
-              الكل
-            </Link>
-          }
-        />
-        <div className="max-h-72 space-y-2 overflow-y-auto rounded-3xl border border-border bg-card p-3">
-          {pulse.length ? (
-            pulse.map((a) => (
-              <div key={a.id} className="flex items-start gap-3 rounded-2xl bg-secondary/30 p-3 text-sm">
-                <UserAvatar value={a.avatar} size={34} framed={false} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate">
-                    {activityIcon(a.type)} <span className="font-bold">{a.who}</span> {a.text}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">{hijri(a.at)}</p>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="rounded-2xl bg-secondary/40 p-5 text-center">
-              <ActivityIcon className="mx-auto size-5 text-primary" />
-              <p className="mt-2 text-sm font-bold">التحدي يبدأ هنا..</p>
-              <p className="mt-1 text-xs text-muted-foreground">{quote}</p>
-              <Link to="/library">
-                <Button size="sm" variant="secondary" className="mt-3 rounded-xl">
-                  <Plus className="size-3.5" /> أضف لعبة
-                </Button>
-              </Link>
-            </div>
-          )}
         </div>
       </section>
 
@@ -403,6 +351,45 @@ function Dashboard() {
             أضف ألعابًا إلى «ناوي أختمها» ليقترح عليك.
           </div>
         )}
+      </section>
+
+      {/* C — نبض الألعاب */}
+      <section>
+        <SectionTitle
+          title="نبض الألعاب"
+          subtitle="آخر نشاطاتكم"
+          action={
+            <Link to="/timeline" className="text-xs text-primary">
+              الكل
+            </Link>
+          }
+        />
+        <div className="max-h-72 space-y-2 overflow-y-auto rounded-3xl border border-border bg-card p-3">
+          {pulse.length ? (
+            pulse.map((a) => (
+              <div key={a.id} className="flex items-start gap-3 rounded-2xl bg-secondary/30 p-3 text-sm">
+                <UserAvatar value={a.avatar} size={34} framed={false} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate">
+                    {activityIcon(a.type)} <span className="font-bold">{a.who}</span> {a.text}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">{hijri(a.at)}</p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-2xl bg-secondary/40 p-5 text-center">
+              <ActivityIcon className="mx-auto size-5 text-primary" />
+              <p className="mt-2 text-sm font-bold">التحدي يبدأ هنا..</p>
+              <p className="mt-1 text-xs text-muted-foreground">{quote}</p>
+              <Link to="/library">
+                <Button size="sm" variant="secondary" className="mt-3 rounded-xl">
+                  <Plus className="size-3.5" /> أضف لعبة
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
       </section>
 
       <Link

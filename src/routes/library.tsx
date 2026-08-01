@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useCurrentData, type GameEntry, type Status } from "@/lib/store";
 
@@ -9,9 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Star } from "lucide-react";
 import { num } from "@/lib/dates";
-import { computeFranchises } from "@/lib/stats";
 import { completionSummary } from "@/lib/completion";
-import { Rail, RailCard, TrophyRailCard } from "@/components/Rail";
+import { GameCard } from "@/components/GameCard";
 
 /** بطاقة لعبة مختومة — غرفة الإنجازات */
 function CompletedCard({ entry, onOpen }: { entry: GameEntry; onOpen: () => void }) {
@@ -109,20 +108,8 @@ function LibraryPage() {
     });
   }, [data.entries, tab, q, sort]);
 
-  const franchises = useMemo(() => computeFranchises(data.entries), [data.entries]);
-
-  const rails = useMemo(() => {
-    const by = (s: Status) => data.entries.filter((e) => e.status === s);
-    return {
-      current: by("current"),
-      completed: by("completed").sort((a, b) =>
-        (b.completedAt ?? "").localeCompare(a.completedAt ?? ""),
-      ),
-    };
-  }, [data.entries]);
-
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <CelebrationModal game={celebrated} onClose={() => setCelebrated(null)} />
       <CelebrationModal game={reviewed} review onClose={() => setReviewed(null)} />
       <div className="space-y-6">
@@ -162,9 +149,9 @@ function LibraryPage() {
         </div>
 
         {list.length ? (
-          tab === "completed" ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {list.map((e) => (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+            {list.map((e, i) =>
+              e.status === "completed" ? (
                 <div key={e.id} className="relative">
                   <CompletedCard entry={e} onOpen={() => setReviewed(e)} />
                   <GameEditDialog
@@ -181,75 +168,13 @@ function LibraryPage() {
                     }
                   />
                 </div>
-              ))}
-            </div>
-          ) : tab === "all" ? (
-            <div className="space-y-8">
-              {!!rails.current.length && (
-                <Rail title="مواصلة اللعب" subtitle="ألعابك النشطة">
-                  {rails.current.map((e, i) => (
-                    <RailCard key={e.id} entry={e} index={i} vip />
-                  ))}
-                </Rail>
-              )}
-              {!!rails.completed.length && (
-                <Rail title="قاعة الألعاب المكتملة" subtitle="إنجازاتك">
-                  {rails.completed.map((e, i) => (
-                    <TrophyRailCard key={e.id} entry={e} index={i} onOpen={() => setReviewed(e)} />
-                  ))}
-                </Rail>
-              )}
-            </div>
-          ) : (
-            <Rail title="قيد اللعب" subtitle={`${num(list.length)} لعبة`}>
-              {list.map((e, i) => (
-                <RailCard key={e.id} entry={e} index={i} vip />
-              ))}
-            </Rail>
-          )
-        ) : (
-
-          <EmptyState text="لا توجد ألعاب هنا بعد." />
-        )}
-      </div>
-
-
-      <div>
-        <SectionTitle title="السلاسل" subtitle="تقدمك في كل سلسلة مع اقتراح الجزء التالي" />
-        {franchises.length ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {franchises.map((f) => (
-              <Link
-                key={f.name}
-                to="/franchise/$name"
-                params={{ name: f.name }}
-                className="block rounded-3xl border border-border bg-card p-4 surface-hover"
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-display font-bold">{f.name}</h3>
-                  <span className="text-xs text-muted-foreground">
-                    {num(f.done)}/{num(f.total)}
-                  </span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-secondary">
-                  <div
-                    className="h-full rounded-full bg-[var(--gradient-primary)]"
-                    style={{ width: `${f.pct}%` }}
-                  />
-                </div>
-                <p className="mt-2 text-[11px] text-muted-foreground">
-                  {num(f.hours)} ساعة · {num(f.pct)}% مكتمل
-                </p>
-                {f.suggestion && (
-                  <p className="mt-3 rounded-2xl bg-secondary/60 px-3 py-2 text-[11px]">
-                    ✨ الجزء التالي المقترح: <span className="font-bold">{f.suggestion}</span>
-                  </p>
-                )}
-              </Link>
-            ))}
+              ) : (
+                <GameCard key={e.id} entry={e} index={i} />
+              ),
+            )}
           </div>
         ) : (
-          <EmptyState text="أضف ألعابًا من سلاسل معروفة لتظهر هنا." />
+          <EmptyState text="لا توجد ألعاب هنا بعد." />
         )}
       </div>
     </div>

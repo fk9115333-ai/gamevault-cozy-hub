@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { Star, PlayCircle, Clock } from "lucide-react";
+import { Star, PlayCircle, Clock, Plus } from "lucide-react";
 import type { GameEntry } from "@/lib/store";
 import { num } from "@/lib/dates";
 import { completionSummary } from "@/lib/completion";
@@ -161,3 +161,55 @@ export function TrophyRailCard({
 }
 
 export { PlayCircle };
+
+/** بطاقة بوستر عمودية للصفوف الأفقية مع زر إضافة سريع */
+export function PosterCard({
+  entry,
+  index = 0,
+  onQuick,
+  quickLabel = "ابدأ اللعب",
+}: {
+  entry: GameEntry;
+  index?: number;
+  onQuick?: () => void;
+  quickLabel?: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index * 0.05, 0.4), duration: 0.35 }}
+      className="group relative w-36 max-w-[42vw] shrink-0 snap-start overflow-hidden rounded-3xl border border-border bg-card transition-transform duration-300 hover:scale-[1.04] active:scale-[0.98]"
+    >
+      <Link to="/game/$id" params={{ id: String(entry.id) }} className="block">
+        <div className="relative aspect-[3/4] overflow-hidden">
+          {entry.image ? (
+            <img
+              src={entry.image}
+              alt={entry.name}
+              loading="lazy"
+              className="size-full object-cover transition-transform duration-700 group-hover:scale-110"
+            />
+          ) : (
+            <div className="size-full bg-secondary" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
+          <h3 className="absolute inset-x-2 bottom-2 truncate font-display text-xs font-bold">
+            <bdi>{entry.name}</bdi>
+          </h3>
+        </div>
+      </Link>
+      {onQuick && (
+        <button
+          type="button"
+          aria-label={quickLabel}
+          title={quickLabel}
+          onClick={onQuick}
+          className="absolute left-2 top-2 grid size-8 place-items-center rounded-full border border-yellow-400/60 bg-background/80 text-primary backdrop-blur transition-colors hover:bg-primary hover:text-primary-foreground"
+        >
+          <Plus className="size-4" />
+        </button>
+      )}
+    </motion.div>
+  );
+}
