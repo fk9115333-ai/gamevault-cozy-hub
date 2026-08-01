@@ -38,7 +38,12 @@ async function rawg<T>(path: string, params: Record<string, string | number> = {
 const EDITION_NOISE =
   /\b(edition|goty|game of the year|deluxe|ultimate|bundle|director'?s cut|premium|remastered)\b/i;
 
-export const isBaseGame = (name: string) => !EDITION_NOISE.test(name);
+/** إضافات ومحتوى إضافي (DLC) — تُستبعد نهائيًا */
+const DLC_NOISE =
+  /\b(dlc|add-?on|expansion|expansion pass|season pass|story pack|character pack|content pack|mission pack|map pack|skin pack|weapon pack|booster|pack)\b/i;
+
+export const isBaseGame = (name: string) => !EDITION_NOISE.test(name) && !DLC_NOISE.test(name);
+
 
 export const searchGames = (q: string) =>
   rawg<{ results: RawgGame[] }>("/games", {
