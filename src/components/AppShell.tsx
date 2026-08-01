@@ -1,0 +1,119 @@
+import { Link, useRouterState } from "@tanstack/react-router";
+import { motion } from "motion/react";
+import {
+  LayoutDashboard,
+  Library,
+  CalendarClock,
+  BarChart3,
+  Trophy,
+  Users,
+  Layers,
+  Settings2,
+  Sparkles,
+} from "lucide-react";
+import { useStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
+import { SmartSearch } from "./SmartSearch";
+import { UserSwitcher } from "./UserSwitcher";
+import type { ReactNode } from "react";
+
+const nav = [
+  { to: "/", label: "الرئيسية", icon: LayoutDashboard },
+  { to: "/library", label: "المكتبة", icon: Library },
+  { to: "/upcoming", label: "القادمة", icon: CalendarClock },
+  { to: "/collections", label: "المجموعات", icon: Layers },
+  { to: "/stats", label: "الإحصائيات", icon: BarChart3 },
+  { to: "/achievements", label: "الإنجازات", icon: Trophy },
+  { to: "/compare", label: "المقارنة", icon: Users },
+  { to: "/profile", label: "الملف الشخصي", icon: Sparkles },
+  { to: "/settings", label: "الإعدادات", icon: Settings2 },
+] as const;
+
+export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const user = useStore((s) => s.currentUser);
+
+  return (
+    <div dir="rtl" className="min-h-screen">
+      <div className="mx-auto flex w-full max-w-[1600px] gap-6 px-3 pb-28 pt-4 md:px-6 lg:pb-8">
+        <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-64 shrink-0 flex-col rounded-3xl glass p-4 lg:flex">
+          <Link to="/" className="mb-6 flex items-center gap-3 px-2">
+            <span className="grid size-10 place-items-center rounded-2xl bg-[var(--gradient-primary)] text-lg font-bold text-primary-foreground">
+              G
+            </span>
+            <span className="font-display text-xl font-extrabold gradient-text">GameHub</span>
+          </Link>
+          <nav className="flex flex-1 flex-col gap-1">
+            {nav.map((item) => {
+              const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={cn(
+                    "relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+                    active && "text-foreground",
+                  )}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="nav-active"
+                      className="absolute inset-0 rounded-2xl bg-secondary/70 ring-1 ring-primary/30"
+                      transition={{ type: "spring", stiffness: 400, damping: 34 }}
+                    />
+                  )}
+                  <item.icon className="relative size-[18px]" />
+                  <span className="relative">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+          <UserSwitcher />
+        </aside>
+
+        <main className="min-w-0 flex-1">
+          <header className="mb-5 flex items-center gap-3">
+            <Link to="/" className="lg:hidden">
+              <span className="grid size-10 place-items-center rounded-2xl bg-[var(--gradient-primary)] font-bold text-primary-foreground">
+                G
+              </span>
+            </Link>
+            <div className="min-w-0 flex-1">
+              <SmartSearch />
+            </div>
+            <div className="hidden md:block lg:hidden">
+              <UserSwitcher compact />
+            </div>
+          </header>
+          <motion.div
+            key={pathname + user}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {children}
+          </motion.div>
+        </main>
+      </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-1 overflow-x-auto glass px-2 py-2 no-scrollbar lg:hidden">
+        {nav.map((item) => {
+          const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={cn(
+                "flex min-w-[68px] flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] transition-colors",
+                active ? "bg-secondary/70 text-primary" : "text-muted-foreground",
+              )}
+            >
+              <item.icon className="size-[18px]" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
+  );
+}
