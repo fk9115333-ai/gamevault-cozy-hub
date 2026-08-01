@@ -50,6 +50,7 @@ export type Database = {
           full_completion: boolean
           game_id: number
           genres: string[]
+          hall_of_fame: boolean
           hours: number
           image: string | null
           legacy: boolean
@@ -61,9 +62,13 @@ export type Database = {
           priority: string
           progress: number
           publisher: string | null
+          queue_position: number
           rating: number
+          recommend: boolean
           released: string | null
+          replay: boolean
           review: string
+          sessions: Json
           slug: string
           started_at: string | null
           status: string
@@ -82,6 +87,7 @@ export type Database = {
           full_completion?: boolean
           game_id: number
           genres?: string[]
+          hall_of_fame?: boolean
           hours?: number
           image?: string | null
           legacy?: boolean
@@ -93,9 +99,13 @@ export type Database = {
           priority?: string
           progress?: number
           publisher?: string | null
+          queue_position?: number
           rating?: number
+          recommend?: boolean
           released?: string | null
+          replay?: boolean
           review?: string
+          sessions?: Json
           slug?: string
           started_at?: string | null
           status?: string
@@ -114,6 +124,7 @@ export type Database = {
           full_completion?: boolean
           game_id?: number
           genres?: string[]
+          hall_of_fame?: boolean
           hours?: number
           image?: string | null
           legacy?: boolean
@@ -125,9 +136,13 @@ export type Database = {
           priority?: string
           progress?: number
           publisher?: string | null
+          queue_position?: number
           rating?: number
+          recommend?: boolean
           released?: string | null
+          replay?: boolean
           review?: string
+          sessions?: Json
           slug?: string
           started_at?: string | null
           status?: string
