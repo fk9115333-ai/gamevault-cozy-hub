@@ -111,6 +111,7 @@ function LibraryPage() {
   return (
     <div className="space-y-10">
       <CelebrationModal game={celebrated} onClose={() => setCelebrated(null)} />
+      <CelebrationModal game={reviewed} review onClose={() => setReviewed(null)} />
       <div className="space-y-6">
         <SectionTitle title="المكتبة" subtitle={`${num(list.length)} لعبة`} />
 
