@@ -126,6 +126,8 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => startCloudSync(), []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AppShell>
