@@ -22,7 +22,7 @@ import type { ReactNode } from "react";
 const mainNav = [
   { to: "/home", label: "الرئيسية", icon: LayoutDashboard },
   { to: "/library", label: "المكتبة", icon: Library },
-  { to: "/upcoming", label: "المرتقبة", icon: CalendarClock },
+  { to: "/upcoming", label: "الخطة", icon: CalendarClock },
   { to: "/stats", label: "الإحصائيات", icon: BarChart3 },
 ] as const;
 
