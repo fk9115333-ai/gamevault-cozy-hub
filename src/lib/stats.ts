@@ -13,7 +13,6 @@ export function computeStats(entries: GameEntry[]) {
   const completed = byStatus(entries, "completed");
   const current = byStatus(entries, "current");
   const backlog = byStatus(entries, "backlog");
-  const next = byStatus(entries, "next");
   const hype = byStatus(entries, "hype");
   const hours = entries.reduce((s, e) => s + (e.hours || 0), 0);
   const rated = entries.filter((e) => e.personalRating > 0);
@@ -40,7 +39,6 @@ export function computeStats(entries: GameEntry[]) {
     completed: completed.length,
     current: current.length,
     backlog: backlog.length,
-    next: next.length,
     hype: hype.length,
     favorites: entries.filter((e) => e.favorite).length,
     coop: entries.filter((e) => e.coop).length,
@@ -315,7 +313,7 @@ export function memoryBox(entries: GameEntry[]): Memory[] {
 
 /** توصية ذكية من قائمة الانتظار بناءً على آخر لعبة مكتملة */
 export function recommendation(entries: GameEntry[]): { game: GameEntry; reason: string } | null {
-  const pool = entries.filter((e) => e.status === "backlog" || e.status === "next");
+  const pool = entries.filter((e) => e.status === "backlog");
   if (!pool.length) return null;
   const lastCompleted = entries
     .filter((e) => e.status === "completed" && e.completedAt)

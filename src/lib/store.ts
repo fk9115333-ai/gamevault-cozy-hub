@@ -12,8 +12,8 @@ import {
 } from "./sync";
 
 export type UserId = "faisal" | "mishal";
-/** الحالات: مكتملة، قيد اللعب، التالي (طابور مرتّب)، الانتظار، المرتقبة (ألعاب لم تصدر) */
-export type Status = "current" | "completed" | "next" | "backlog" | "hype";
+/** الحالات: مكتملة، قيد اللعب، الانتظار (ناوي أختمها)، المرتقبة (ألعاب لم تصدر) */
+export type Status = "current" | "completed" | "backlog" | "hype";
 export type Priority = "high" | "medium" | "low";
 
 export type PlaySession = {
@@ -39,7 +39,7 @@ export type GameEntry = {
   status: Status;
   favorite: boolean;
   favoriteOrder: number;
-  /** ترتيب الطابور في «التالي» */
+  /** ترتيب الطابور في «ناوي أختمها» */
   queuePosition: number;
   progress: number;
   hours: number;
@@ -167,7 +167,6 @@ export const entryFromRawg = (g: RawgGame, status: Status): GameEntry => ({
 export const statusLabel: Record<Status, string> = {
   current: "قيد اللعب",
   completed: "المكتملة",
-  next: "التالي",
   backlog: "الانتظار",
   hype: "المرتقبة",
 };
@@ -275,9 +274,9 @@ export const useStore = create<State>()(
               return { ...u, entries: u.entries.map((e) => (e.id === g.id ? after : e)) };
             }
             const entry = entryFromRawg(g, status);
-            if (status === "next")
+            if (status === "backlog")
               entry.queuePosition =
-                Math.max(0, ...u.entries.filter((e) => e.status === "next").map((e) => e.queuePosition)) + 1;
+                Math.max(0, ...u.entries.filter((e) => e.status === "backlog").map((e) => e.queuePosition)) + 1;
             pushEntry(uid, entry);
             return log(
               { ...u, entries: [entry, ...u.entries] },

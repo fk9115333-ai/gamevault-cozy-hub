@@ -46,7 +46,7 @@ function Dashboard() {
 
   /** اقتراح اليوم: لعبة عشوائية من «ناوي أختمها» */
   const suggestion = useMemo(() => {
-    const pool = data.entries.filter((e) => e.status === "next" || e.status === "backlog");
+    const pool = data.entries.filter((e) => e.status === "backlog");
     if (!pool.length) return null;
     const seed = new Date().getDate() + currentUser.length;
     return pool[seed % pool.length]!;

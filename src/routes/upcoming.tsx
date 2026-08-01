@@ -45,7 +45,7 @@ function PlanPage() {
     .sort((a, b) => (a.released ?? "9999").localeCompare(b.released ?? "9999"));
 
   const toBeat = [...data.entries]
-    .filter((e) => e.status === "next" || e.status === "backlog")
+    .filter((e) => e.status === "backlog")
     .sort(
       (a, b) => (a.queuePosition || 999) - (b.queuePosition || 999) || a.name.localeCompare(b.name),
     );
