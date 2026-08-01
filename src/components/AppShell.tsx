@@ -5,8 +5,6 @@ import {
   Library,
   CalendarClock,
   BarChart3,
-  Trophy,
-  Users,
   Settings2,
   Sparkles,
 } from "lucide-react";
@@ -14,18 +12,23 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { SmartSearch } from "./SmartSearch";
 import { UserSwitcher } from "./UserSwitcher";
+import { WelcomeDialog } from "./WelcomeDialog";
 import type { ReactNode } from "react";
 
-const nav = [
+/** التنقل السفلي: 4 تبويبات فقط */
+const mainNav = [
   { to: "/", label: "الرئيسية", icon: LayoutDashboard },
   { to: "/library", label: "المكتبة", icon: Library },
   { to: "/upcoming", label: "المرتقبة", icon: CalendarClock },
   { to: "/stats", label: "الإحصائيات", icon: BarChart3 },
-  { to: "/achievements", label: "الإنجازات", icon: Trophy },
-  { to: "/compare", label: "المقارنة", icon: Users },
+] as const;
+
+const nav = [
+  ...mainNav,
   { to: "/profile", label: "الملف الشخصي", icon: Sparkles },
   { to: "/settings", label: "الإعدادات", icon: Settings2 },
 ] as const;
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
