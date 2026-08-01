@@ -1,8 +1,15 @@
 const RAWG_KEY = "4ea2968a10604ee0bacd122f1ad00cee";
 const BASE = "https://api.rawg.io/api";
 
-/** PC · PS4 · PS5 */
-export const PLATFORMS = "4,18,187";
+/** PC · PS4 · PS5 · Xbox One · Xbox Series X|S · Nintendo Switch */
+export const PLATFORMS = "4,18,187,1,186,7";
+
+/** منصات رئيسية (PC · PlayStation · Xbox · Nintendo) — تستبعد الجوال */
+export const PARENT_PLATFORMS = "1,2,3,7";
+
+/** معرّفات منصات الجوال (iOS · Android) */
+const MOBILE_PLATFORM_IDS = new Set([3, 21]);
+const CORE_PLATFORM_IDS = new Set([4, 18, 187, 1, 186, 7, 14, 16, 15, 27, 8, 9, 10, 5, 6, 83, 24, 43, 11]);
 
 export type RawgGame = {
   id: number;
@@ -44,6 +51,19 @@ const DLC_NOISE =
 
 export const isBaseGame = (name: string) => !EDITION_NOISE.test(name) && !DLC_NOISE.test(name);
 
+/** ألعاب الجوال ممنوعة — نقبل فقط ما يصدر على PC أو الأجهزة المنزلية */
+export const isCoreGame = (g: RawgGame) => {
+  const ids = (g.platforms ?? []).map((p) => p.platform.id);
+  if (!ids.length) return true;
+  if (!ids.some((id) => CORE_PLATFORM_IDS.has(id))) return false;
+  // لعبة جوال بحتة (iOS/Android فقط)
+  return !ids.every((id) => MOBILE_PLATFORM_IDS.has(id));
+};
+
+/** فلترة موحّدة: لعبة أساسية + منصات رئيسية */
+export const cleanList = (list: RawgGame[]) =>
+  list.filter((g) => isBaseGame(g.name) && isCoreGame(g));
+
 
 export const searchGames = (q: string) =>
   rawg<{ results: RawgGame[] }>("/games", {
@@ -51,10 +71,11 @@ export const searchGames = (q: string) =>
     page_size: 20,
     search_precise: "true",
     platforms: PLATFORMS,
+    parent_platforms: PARENT_PLATFORMS,
     ordering: "-added",
     exclude_collection: "true",
     exclude_additions: "true",
-  }).then((d) => d.results.filter((g) => isBaseGame(g.name)).slice(0, 12));
+  }).then((d) => cleanList(d.results).slice(0, 12));
 
 export const getGame = (id: string | number) => rawg<RawgGame>(`/games/${id}`);
 
@@ -65,7 +86,7 @@ export const getScreenshots = (id: string | number) =>
 
 export const getSimilar = (id: string | number) =>
   rawg<{ results: RawgGame[] }>(`/games/${id}/game-series`, { page_size: 8 })
-    .then((d) => d.results.filter((g) => isBaseGame(g.name)))
+    .then((d) => cleanList(d.results))
     .catch(() => []);
 
 export const getTrending = () =>
@@ -73,10 +94,11 @@ export const getTrending = () =>
     ordering: "-added",
     page_size: 12,
     platforms: PLATFORMS,
+    parent_platforms: PARENT_PLATFORMS,
     exclude_collection: "true",
     exclude_additions: "true",
     dates: `${new Date().getFullYear() - 2}-01-01,${new Date().toISOString().slice(0, 10)}`,
-  }).then((d) => d.results.filter((g) => isBaseGame(g.name)));
+  }).then((d) => cleanList(d.results));
 
 /** توصيات ذكية بناءً على أنواع الألعاب المكتملة — أو أفضل الألعاب عند عدم وجود سجل */
 export const getRecommended = (genreSlugs: string[] = []) =>
@@ -86,7 +108,8 @@ export const getRecommended = (genreSlugs: string[] = []) =>
     metacritic: "82,100",
     page_size: 30,
     platforms: PLATFORMS,
+    parent_platforms: PARENT_PLATFORMS,
     exclude_collection: "true",
     exclude_additions: "true",
     dates: `${new Date().getFullYear() - 12}-01-01,${new Date().toISOString().slice(0, 10)}`,
-  }).then((d) => d.results.filter((g) => isBaseGame(g.name) && g.background_image));
+  }).then((d) => cleanList(d.results).filter((g) => !!g.background_image));
