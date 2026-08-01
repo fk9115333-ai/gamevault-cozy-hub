@@ -51,7 +51,7 @@ export function SessionBox({ entryId, onDone }: { entryId: number; onDone?: () =
   const addSession = useStore((s) => s.addSession);
 
   const log = (minutes: number) => {
-    buzz(30);
+    buzz(50);
     const now = new Date();
     const end = now.toTimeString().slice(0, 5);
     const startDate = new Date(now.getTime() - minutes * 60000);
@@ -164,7 +164,7 @@ export function GameEditDialog({
       finish();
       return;
     }
-    buzz(30);
+    buzz(50);
     updateGame(entry.id, normalized());
     toast.success("تم الحفظ");
     setOpen(false);
@@ -274,7 +274,7 @@ export function GameEditDialog({
                 <Switch
                   checked={draft.fullCompletion}
                   onCheckedChange={(v) => {
-                    buzz(30);
+                    buzz(50);
                     set("fullCompletion", v);
                   }}
                 />
@@ -300,7 +300,7 @@ export function GameEditDialog({
               <Switch
                 checked={draft.coop}
                 onCheckedChange={(v) => {
-                  buzz(30);
+                  buzz(50);
                   set("coop", v);
                 }}
               />
