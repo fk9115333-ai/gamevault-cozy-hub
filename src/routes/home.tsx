@@ -109,7 +109,9 @@ function Dashboard() {
     return pool[seed % pool.length]!;
   }, [data.entries, currentUser]);
 
-  const quote = QUOTES[new Date().getDate() % QUOTES.length]!;
+  const [quoteIdx, setQuoteIdx] = useState(0);
+  useEffect(() => setQuoteIdx(new Date().getDate() % QUOTES.length), []);
+  const quote = QUOTES[quoteIdx]!;
   const quick = [
     { icon: Trophy, label: "مكتملة", value: num(stats.completed) },
     { icon: Zap, label: "المستوى", value: num(level) },
