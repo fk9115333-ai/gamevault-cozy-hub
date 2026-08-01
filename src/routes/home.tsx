@@ -235,37 +235,6 @@ function Dashboard() {
         </Rail>
       )}
 
-      {!!backlog.length && (
-        <Rail
-          title="ناوي أختمها"
-          subtitle="قائمة الانتظار"
-          action={
-            <Link to="/upcoming" className="text-xs text-primary">
-              الخطة
-            </Link>
-          }
-        >
-          {backlog.map((e, i) => (
-            <RailCard key={e.id} entry={e} index={i} />
-          ))}
-        </Rail>
-      )}
-
-      {!!completed.length && (
-        <Rail
-          title="قاعة الألعاب المكتملة"
-          subtitle="إنجازاتك"
-          action={
-            <Link to="/library" className="text-xs text-primary">
-              الكل
-            </Link>
-          }
-        >
-          {completed.map((e, i) => (
-            <TrophyRailCard key={e.id} entry={e} index={i} onOpen={() => setReviewed(e)} />
-          ))}
-        </Rail>
-      )}
 
 
 
