@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useStore, type GameEntry, type Status } from "@/lib/store";
 import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
@@ -23,6 +24,8 @@ const statuses: { v: Status; l: string }[] = [
   { v: "backlog", l: "الانتظار" },
   { v: "wishlist", l: "الرغبات" },
 ];
+
+const toDateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 
 export function GameEditDialog({
   entry,
@@ -58,16 +61,26 @@ export function GameEditDialog({
   const set = <K extends keyof GameEntry>(k: K, v: GameEntry[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
 
+  const isCompleted = draft.status === "completed";
+
+  const normalized = (): GameEntry => ({
+    ...draft,
+    fullCompletion: isCompleted ? draft.fullCompletion : false,
+    legacy: isCompleted ? draft.legacy : false,
+    progress: isCompleted ? 100 : draft.progress,
+    completedAt: isCompleted ? (draft.completedAt ?? new Date().toISOString()) : null,
+  });
+
   const save = () => {
     buzz(30);
-    updateGame(entry.id, draft);
+    updateGame(entry.id, normalized());
     toast.success("تم الحفظ");
     setOpen(false);
   };
 
   const finish = () => {
     buzz([40, 60, 40]);
-    completeGame(entry.id, draft);
+    completeGame(entry.id, { ...normalized(), status: "completed" });
     setOpen(false);
     onCompleted?.();
   };
@@ -95,16 +108,6 @@ export function GameEditDialog({
                 {s.l}
               </Button>
             ))}
-          </div>
-
-          <div>
-            <Label className="mb-2 block text-xs">نسبة التقدم: {draft.progress}%</Label>
-            <Slider
-              value={[draft.progress]}
-              max={100}
-              step={1}
-              onValueChange={([v]) => set("progress", v ?? 0)}
-            />
           </div>
 
           <div>
@@ -149,16 +152,50 @@ export function GameEditDialog({
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-2xl bg-secondary/50 px-4 py-3">
-            <Label className="text-xs">إكمال 100%</Label>
-            <Switch
-              checked={draft.fullCompletion}
-              onCheckedChange={(v) => {
-                buzz(30);
-                set("fullCompletion", v);
-              }}
-            />
-          </div>
+          {isCompleted && (
+            <>
+              <div className="flex items-center justify-between rounded-2xl bg-secondary/50 px-4 py-3">
+                <Label className="text-xs">إكمال 100%</Label>
+                <Switch
+                  checked={draft.fullCompletion}
+                  onCheckedChange={(v) => {
+                    buzz(30);
+                    set("fullCompletion", v);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-3 rounded-2xl bg-secondary/50 px-4 py-3">
+                <div>
+                  <Label className="mb-1 block text-xs">تاريخ الختم</Label>
+                  <Input
+                    type="date"
+                    disabled={draft.legacy}
+                    value={toDateInput(draft.completedAt)}
+                    max={new Date().toISOString().slice(0, 10)}
+                    onChange={(e) =>
+                      set("completedAt", e.target.value ? new Date(e.target.value).toISOString() : null)
+                    }
+                  />
+                </div>
+                <label className="flex items-start gap-3 text-xs">
+                  <Checkbox
+                    checked={draft.legacy}
+                    onCheckedChange={(v) => {
+                      buzz(20);
+                      set("legacy", Boolean(v));
+                    }}
+                  />
+                  <span>
+                    ختمتها قديمًا — لا أذكر التاريخ
+                    <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                      تُحتسب في الإجماليات الكلية لكن تُستثنى من الرسوم الشهرية والمتوسطات الزمنية.
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </>
+          )}
 
           <div className="flex items-center justify-between rounded-2xl bg-secondary/50 px-4 py-3">
             <div>
