@@ -36,6 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div dir="rtl" className="min-h-screen">
+      <WelcomeDialog />
       <div className="mx-auto flex w-full max-w-[1600px] gap-6 px-3 pb-28 pt-4 md:px-6 lg:pb-8">
         <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-64 shrink-0 flex-col rounded-3xl glass p-4 lg:flex">
           <Link to="/" className="mb-6 flex items-center gap-3 px-2">
@@ -97,8 +98,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-1 overflow-x-auto glass px-2 py-2 no-scrollbar lg:hidden">
-        {nav.map((item) => {
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-1 glass px-2 py-2 lg:hidden">
+        {mainNav.map((item) => {
           const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
           return (
             <Link
