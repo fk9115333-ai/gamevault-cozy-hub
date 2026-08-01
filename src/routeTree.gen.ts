@@ -18,6 +18,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as TimelineRouteImport } from './routes/timeline'
 import { Route as UpcomingRouteImport } from './routes/upcoming'
+import { Route as WrapRouteImport } from './routes/wrap'
 import { Route as GameIdRouteImport } from './routes/game.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -65,6 +66,11 @@ const UpcomingRoute = UpcomingRouteImport.update({
   path: '/upcoming',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WrapRoute = WrapRouteImport.update({
+  id: '/wrap',
+  path: '/wrap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GameIdRoute = GameIdRouteImport.update({
   id: '/game/$id',
   path: '/game/$id',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/stats': typeof StatsRoute
   '/timeline': typeof TimelineRoute
   '/upcoming': typeof UpcomingRoute
+  '/wrap': typeof WrapRoute
   '/game/$id': typeof GameIdRoute
 }
 export interface FileRoutesByTo {
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/stats': typeof StatsRoute
   '/timeline': typeof TimelineRoute
   '/upcoming': typeof UpcomingRoute
+  '/wrap': typeof WrapRoute
   '/game/$id': typeof GameIdRoute
 }
 export interface FileRoutesById {
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/stats': typeof StatsRoute
   '/timeline': typeof TimelineRoute
   '/upcoming': typeof UpcomingRoute
+  '/wrap': typeof WrapRoute
   '/game/$id': typeof GameIdRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/stats'
     | '/timeline'
     | '/upcoming'
+    | '/wrap'
     | '/game/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/stats'
     | '/timeline'
     | '/upcoming'
+    | '/wrap'
     | '/game/$id'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/stats'
     | '/timeline'
     | '/upcoming'
+    | '/wrap'
     | '/game/$id'
   fileRoutesById: FileRoutesById
 }
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   StatsRoute: typeof StatsRoute
   TimelineRoute: typeof TimelineRoute
   UpcomingRoute: typeof UpcomingRoute
+  WrapRoute: typeof WrapRoute
   GameIdRoute: typeof GameIdRoute
 }
 
@@ -225,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UpcomingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/wrap': {
+      id: '/wrap'
+      path: '/wrap'
+      fullPath: '/wrap'
+      preLoaderRoute: typeof WrapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/game/$id': {
       id: '/game/$id'
       path: '/game/$id'
@@ -245,6 +265,7 @@ const rootRouteChildren: RootRouteChildren = {
   StatsRoute: StatsRoute,
   TimelineRoute: TimelineRoute,
   UpcomingRoute: UpcomingRoute,
+  WrapRoute: WrapRoute,
   GameIdRoute: GameIdRoute,
 }
 export const routeTree = rootRouteImport
