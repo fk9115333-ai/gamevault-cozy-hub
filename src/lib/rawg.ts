@@ -1,6 +1,9 @@
 const RAWG_KEY = "4ea2968a10604ee0bacd122f1ad00cee";
 const BASE = "https://api.rawg.io/api";
 
+/** PC · PS4 · PS5 */
+export const PLATFORMS = "4,18,187";
+
 export type RawgGame = {
   id: number;
   slug: string;
@@ -31,10 +34,22 @@ async function rawg<T>(path: string, params: Record<string, string | number> = {
   return (await res.json()) as T;
 }
 
+/** إصدارات غير أساسية — نعرض النسخة الأساسية فقط */
+const EDITION_NOISE =
+  /\b(edition|goty|game of the year|deluxe|ultimate|bundle|director'?s cut|premium|remastered)\b/i;
+
+export const isBaseGame = (name: string) => !EDITION_NOISE.test(name);
+
 export const searchGames = (q: string) =>
-  rawg<{ results: RawgGame[] }>("/games", { search: q, page_size: 12, search_precise: "true" }).then(
-    (d) => d.results,
-  );
+  rawg<{ results: RawgGame[] }>("/games", {
+    search: q,
+    page_size: 20,
+    search_precise: "true",
+    platforms: PLATFORMS,
+    ordering: "-added",
+    exclude_collection: "true",
+    exclude_additions: "true",
+  }).then((d) => d.results.filter((g) => isBaseGame(g.name)).slice(0, 12));
 
 export const getGame = (id: string | number) => rawg<RawgGame>(`/games/${id}`);
 
@@ -45,12 +60,15 @@ export const getScreenshots = (id: string | number) =>
 
 export const getSimilar = (id: string | number) =>
   rawg<{ results: RawgGame[] }>(`/games/${id}/game-series`, { page_size: 8 })
-    .then((d) => d.results)
+    .then((d) => d.results.filter((g) => isBaseGame(g.name)))
     .catch(() => []);
 
 export const getTrending = () =>
   rawg<{ results: RawgGame[] }>("/games", {
     ordering: "-added",
     page_size: 12,
+    platforms: PLATFORMS,
+    exclude_collection: "true",
+    exclude_additions: "true",
     dates: `${new Date().getFullYear() - 2}-01-01,${new Date().toISOString().slice(0, 10)}`,
-  }).then((d) => d.results);
+  }).then((d) => d.results.filter((g) => isBaseGame(g.name)));
