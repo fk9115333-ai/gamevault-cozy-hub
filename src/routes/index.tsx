@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { useStore, type UserId } from "@/lib/store";
 import { computeLevel } from "@/lib/stats";
 import { buzz } from "@/lib/haptics";
+import { UserAvatar } from "@/components/UserAvatar";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -58,9 +59,7 @@ function ProfileSelect() {
                 onClick={() => pick(u)}
                 className="group flex flex-col items-center gap-4"
               >
-                <span className="grid aspect-square w-full place-items-center rounded-[2rem] border border-border bg-card text-6xl transition-all group-hover:border-primary group-hover:shadow-[0_0_60px_-15px_hsl(var(--primary))] md:text-8xl">
-                  {p.avatar}
-                </span>
+                <UserAvatar value={p.avatar} size={160} className="size-32 md:size-40" />
                 <span className="font-display text-xl font-extrabold md:text-2xl">{p.name}</span>
                 <span className="text-xs text-muted-foreground">المستوى {level}</span>
               </motion.button>
