@@ -1,29 +1,47 @@
-export const hijri = (date: string | Date | null) => {
-  if (!date) return "—";
+/** كل التواريخ في التطبيق تُعرض بالهجري الرقمي: 1448/02/15 */
+
+const hijriFmt = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-nu-latn", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+const toDate = (date: string | Date | null | undefined) => {
+  if (!date) return null;
   const d = typeof date === "string" ? new Date(date) : date;
-  if (Number.isNaN(d.getTime())) return "—";
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+/** 1448/02/15 */
+export const hijri = (date: string | Date | null | undefined, fallback = "—") => {
+  const d = toDate(date);
+  if (!d) return fallback;
   try {
-    return new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(d);
+    const parts = hijriFmt.formatToParts(d);
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+    const y = get("year").replace(/[^\d]/g, "");
+    return `${y}/${get("month")}/${get("day")}`;
   } catch {
-    return "—";
+    return fallback;
   }
 };
 
-export const gregorian = (date: string | Date | null) => {
-  if (!date) return "غير معلن";
-  const d = typeof date === "string" ? new Date(date) : date;
-  if (Number.isNaN(d.getTime())) return "غير معلن";
-  return new Intl.DateTimeFormat("ar", { day: "numeric", month: "long", year: "numeric" }).format(
-    d,
-  );
-};
+/** يبقى الاسم للتوافق — لكنه يعرض هجريًا رقميًا مثل بقية التطبيق */
+export const gregorian = (date: string | Date | null | undefined) => hijri(date, "غير معلن");
 
 export const num = (n: number, digits = 0) =>
   new Intl.NumberFormat("ar-EG", { maximumFractionDigits: digits }).format(n);
+
+/** فرق الأيام بين تاريخين */
+export const daysBetween = (
+  from: string | Date | null | undefined,
+  to: string | Date | null | undefined,
+) => {
+  const a = toDate(from);
+  const b = toDate(to) ?? new Date();
+  if (!a) return null;
+  return Math.max(0, Math.round((b.getTime() - a.getTime()) / 86400000));
+};
 
 export const countdown = (target: string | null, now: number) => {
   if (!target) return null;
