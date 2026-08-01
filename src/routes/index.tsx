@@ -4,16 +4,13 @@ import {
   Gamepad2,
   CheckCircle2,
   Clock3,
-  ListTodo,
-  Heart,
+  CalendarClock,
   Star,
   Timer,
-  Sparkles,
   Shuffle,
-  Trophy,
 } from "lucide-react";
 import { useCurrentData, useOtherData, useStore } from "@/lib/store";
-import { computeStats, computeAchievements, activityIcon } from "@/lib/stats";
+import { computeStats, activityIcon } from "@/lib/stats";
 import { gregorian, hijri, num } from "@/lib/dates";
 import { GameCard } from "@/components/GameCard";
 import { StatCard, SectionTitle, EmptyState } from "@/components/ui-bits";
@@ -36,10 +33,9 @@ export const Route = createFileRoute("/")({
 function Dashboard() {
   const data = useCurrentData();
   const userName = data.profile.name;
-  const stats = computeStats(data.entries);
-  const achievements = computeAchievements(data.entries).filter((a) => a.unlocked).slice(0, 4);
+  const stats = computeStats(data.entries, data.profile.gamingStartDate);
   const current = data.entries.filter((e) => e.status === "current");
-  const hero = current[0] ?? data.entries[0];
+  const hero = current[0] ?? null;
   const lastCompleted = data.entries
     .filter((e) => e.status === "completed" && e.completedAt)
     .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""))[0];
@@ -102,7 +98,7 @@ function Dashboard() {
               </Link>
             ) : (
               <span className="rounded-2xl glass px-4 py-3 text-sm text-muted-foreground">
-                ابحث عن لعبة وأضفها لتبدأ
+                لا توجد ألعاب قيد اللعب حالياً
               </span>
             )}
             {lastCompleted && (
@@ -118,15 +114,33 @@ function Dashboard() {
         </div>
       </motion.section>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
-        <StatCard label="كل الألعاب" value={stats.total} icon={Gamepad2} index={0} />
-        <StatCard label="مكتملة" value={stats.completed} icon={CheckCircle2} index={1} />
-        <StatCard label="قيد اللعب" value={stats.current} icon={Clock3} index={2} />
-        <StatCard label="الانتظار" value={stats.backlog} icon={ListTodo} index={3} />
-        <StatCard label="الرغبات" value={stats.wishlist} icon={Sparkles} index={4} />
-        <StatCard label="المفضلة" value={stats.favorites} icon={Heart} index={5} />
-        <StatCard label="ساعات اللعب" value={stats.hours} icon={Timer} index={6} />
-        <StatCard label="متوسط التقييم" value={stats.avgRating} icon={Star} index={7} />
+      <section className="space-y-3">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard label="كل الألعاب" value={stats.total} icon={Gamepad2} index={0} />
+          <StatCard label="مكتملة" value={stats.completed} icon={CheckCircle2} index={1} />
+          <StatCard label="قيد اللعب" value={stats.current} icon={Clock3} index={2} />
+          <StatCard label="المرتقبة" value={stats.hype} icon={CalendarClock} index={3} />
+        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.45 }}
+          className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-6"
+        >
+          <div className="absolute inset-0 opacity-40" style={{ background: "var(--gradient-hero)" }} />
+          <div className="relative flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground">ساعات اللعب</p>
+              <p className="font-display text-4xl font-black md:text-5xl">{num(stats.hours, 1)}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                بمعدل {num(stats.avgDailyHours, 1)} ساعة يوميًا
+              </p>
+            </div>
+            <span className="grid size-14 place-items-center rounded-3xl bg-secondary/70 text-primary">
+              <Timer className="size-6" />
+            </span>
+          </div>
+        </motion.div>
       </section>
 
       <section className="flex items-center gap-3 overflow-hidden rounded-3xl border border-border bg-card px-5 py-4">
@@ -215,31 +229,6 @@ function Dashboard() {
           </div>
 
           <div>
-            <SectionTitle
-              title="آخر الإنجازات"
-              action={
-                <Link to="/achievements" className="text-xs text-primary">
-                  الكل
-                </Link>
-              }
-            />
-            <div className="grid grid-cols-2 gap-2">
-              {achievements.length ? (
-                achievements.map((a) => (
-                  <div key={a.id} className="rounded-2xl border border-border bg-card p-3">
-                    <p className="text-2xl">{a.icon}</p>
-                    <p className="mt-1 text-xs font-bold">{a.title}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="col-span-2 rounded-2xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-                  لا إنجازات بعد
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div>
             <SectionTitle title="الأهداف" />
             <div className="space-y-3 rounded-3xl border border-border bg-card p-4">
               {data.goals.map((g) => {
@@ -273,7 +262,7 @@ function Dashboard() {
       <section className="grid gap-3 sm:grid-cols-3">
         <QuickAction to="/library" icon={<Gamepad2 className="size-4" />} label="إدارة المكتبة" />
         <QuickAction to="/stats" icon={<Star className="size-4" />} label="الإحصائيات" />
-        <QuickAction to="/achievements" icon={<Trophy className="size-4" />} label="الإنجازات" />
+        <QuickAction to="/upcoming" icon={<CalendarClock className="size-4" />} label="المرتقبة" />
       </section>
     </div>
   );
