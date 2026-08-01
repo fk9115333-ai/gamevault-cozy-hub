@@ -197,14 +197,26 @@ function Dashboard() {
         transition={{ duration: 0.4 }}
         className="relative overflow-hidden rounded-[2rem] border-2 border-yellow-500/30 shadow-[0_0_35px_-18px_rgba(234,179,8,0.8)]"
       >
-        {hero?.image && (
+        {bannerImages.length > 1 ? (
+          <div className="absolute inset-0 grid grid-cols-3">
+            {bannerImages.map((src, i) => (
+              <img
+                key={`${src}-${i}`}
+                src={src}
+                alt=""
+                aria-hidden
+                className="size-full object-cover opacity-60"
+              />
+            ))}
+          </div>
+        ) : (
           <img
-            src={hero.image}
-            alt={hero.name}
+            src={bannerImages[0] ?? heroFallback}
+            alt={hero?.name ?? "خلفية ألعاب"}
             className="absolute inset-0 size-full scale-105 object-cover opacity-60"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/40" />
         <div className="relative flex min-h-44 flex-col justify-end gap-3 p-5">
           {hero ? (
             <>
