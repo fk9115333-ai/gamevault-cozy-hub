@@ -19,9 +19,14 @@ export const entryToRow = (userId: UserId, e: GameEntry) => ({
   status: e.status,
   favorite: e.favorite,
   favorite_order: e.favoriteOrder,
+  queue_position: e.queuePosition,
   progress: e.progress,
   hours: e.hours,
   personal_rating: e.personalRating,
+  recommend: e.recommend,
+  replay: e.replay,
+  hall_of_fame: e.hallOfFame,
+  sessions: e.sessions,
   review: e.review,
   notes: e.notes,
   best_moment: e.bestMoment,
@@ -29,7 +34,6 @@ export const entryToRow = (userId: UserId, e: GameEntry) => ({
   priority: e.priority,
   coop: e.coop,
   full_completion: e.fullCompletion,
-  legacy: e.legacy,
   started_at: e.startedAt,
   completed_at: e.completedAt,
   added_at: e.addedAt,
@@ -50,12 +54,19 @@ export const rowToEntry = (r: Row): GameEntry => ({
   developer: (r["developer"] as string | null) ?? null,
   publisher: (r["publisher"] as string | null) ?? null,
   playtimeEstimate: Number(r["playtime_estimate"] ?? 0),
-  status: (r["status"] as GameEntry["status"]) ?? "backlog",
+  status: ((r["status"] as string) === "wishlist"
+    ? "backlog"
+    : ((r["status"] as GameEntry["status"]) ?? "backlog")) as GameEntry["status"],
   favorite: Boolean(r["favorite"]),
   favoriteOrder: Number(r["favorite_order"] ?? 0),
+  queuePosition: Number(r["queue_position"] ?? 0),
   progress: Number(r["progress"] ?? 0),
   hours: Number(r["hours"] ?? 0),
   personalRating: Number(r["personal_rating"] ?? 0),
+  recommend: Boolean(r["recommend"]),
+  replay: Boolean(r["replay"]),
+  hallOfFame: Boolean(r["hall_of_fame"]),
+  sessions: (r["sessions"] as GameEntry["sessions"] | null) ?? [],
   review: String(r["review"] ?? ""),
   notes: String(r["notes"] ?? ""),
   bestMoment: String(r["best_moment"] ?? ""),
@@ -63,11 +74,11 @@ export const rowToEntry = (r: Row): GameEntry => ({
   priority: (r["priority"] as GameEntry["priority"]) ?? "medium",
   coop: Boolean(r["coop"]),
   fullCompletion: Boolean(r["full_completion"]),
-  legacy: Boolean(r["legacy"]),
   startedAt: (r["started_at"] as string | null) ?? null,
   completedAt: (r["completed_at"] as string | null) ?? null,
   addedAt: String(r["added_at"] ?? new Date().toISOString()),
 });
+
 
 /* ---------- pushes (fire and forget) ---------- */
 
