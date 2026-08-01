@@ -129,13 +129,18 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] transition-all",
-                active
-                  ? "gold-glow bg-secondary/70 font-bold ring-1 ring-yellow-500/40"
-                  : "text-muted-foreground",
+                "flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 text-[10px] transition-colors",
+                active ? "font-bold text-primary" : "text-muted-foreground",
               )}
             >
-              <item.icon className="size-[18px]" />
+              <span
+                className={cn(
+                  "grid size-8 place-items-center rounded-full transition-colors",
+                  active && "bg-primary/12",
+                )}
+              >
+                <item.icon className="size-[18px]" />
+              </span>
               {item.label}
             </Link>
           );
