@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { useStore, type GameEntry, type Status, type Priority } from "@/lib/store";
+import { useStore, type GameEntry, type Status } from "@/lib/store";
+import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
 import type { ReactNode } from "react";
 
@@ -23,64 +24,73 @@ const statuses: { v: Status; l: string }[] = [
   { v: "wishlist", l: "الرغبات" },
 ];
 
-const priorities: { v: Priority; l: string }[] = [
-  { v: "high", l: "🔥 عالية" },
-  { v: "medium", l: "⭐ متوسطة" },
-  { v: "low", l: "🕒 منخفضة" },
-];
-
 export function GameEditDialog({
   entry,
   trigger,
   onCompleted,
+  open: openProp,
+  onOpenChange,
 }: {
   entry: GameEntry;
-  trigger: ReactNode;
+  trigger?: ReactNode;
   onCompleted?: () => void;
+  open?: boolean;
+  onOpenChange?: (o: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : openState;
+  const setOpen = (o: boolean) => {
+    if (!controlled) setOpenState(o);
+    onOpenChange?.(o);
+  };
+
   const [draft, setDraft] = useState(entry);
   const updateGame = useStore((s) => s.updateGame);
   const completeGame = useStore((s) => s.completeGame);
   const removeGame = useStore((s) => s.removeGame);
 
+  useEffect(() => {
+    if (open) setDraft(entry);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, entry.id]);
+
   const set = <K extends keyof GameEntry>(k: K, v: GameEntry[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
 
   const save = () => {
+    buzz(30);
     updateGame(entry.id, draft);
     toast.success("تم الحفظ");
     setOpen(false);
   };
 
   const finish = () => {
+    buzz([40, 60, 40]);
     completeGame(entry.id, draft);
     setOpen(false);
     onCompleted?.();
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (o) setDraft(entry);
-      }}
-    >
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <Dialog open={open} onOpenChange={setOpen}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent dir="rtl" className="max-h-[88vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-right font-display">{entry.name}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="grid grid-cols-2 gap-2">
             {statuses.map((s) => (
               <Button
                 key={s.v}
                 variant={draft.status === s.v ? "default" : "secondary"}
                 size="sm"
-                onClick={() => set("status", s.v)}
+                onClick={() => {
+                  buzz(20);
+                  set("status", s.v);
+                }}
               >
                 {s.l}
               </Button>
@@ -103,71 +113,66 @@ export function GameEditDialog({
               value={[draft.personalRating]}
               max={10}
               step={0.5}
-              onValueChange={([v]) => set("personalRating", v ?? 0)}
+              onValueChange={([v]) => {
+                if (v && v % 5 === 0) buzz(50);
+                set("personalRating", v ?? 0);
+              }}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="mb-1 block text-xs">ساعات اللعب</Label>
+          <div>
+            <Label className="mb-1 block text-xs">ساعات اللعب</Label>
+            <div className="flex items-center gap-2">
+              <Button
+                size="icon"
+                variant="secondary"
+                onClick={() => set("hours", Math.max(0, draft.hours - 1))}
+              >
+                −
+              </Button>
               <Input
                 type="number"
+                className="text-center"
                 value={draft.hours}
                 onChange={(e) => set("hours", Number(e.target.value))}
               />
-            </div>
-            <div>
-              <Label className="mb-1 block text-xs">المنصة</Label>
-              <Input value={draft.platform} onChange={(e) => set("platform", e.target.value)} />
-            </div>
-            <div>
-              <Label className="mb-1 block text-xs">الصعوبة</Label>
-              <Input value={draft.difficulty} onChange={(e) => set("difficulty", e.target.value)} />
-            </div>
-            <div>
-              <Label className="mb-1 block text-xs">عدد الإنجازات</Label>
-              <Input
-                type="number"
-                value={draft.achievements}
-                onChange={(e) => set("achievements", Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label className="mb-1 block text-xs">مرات الإعادة</Label>
-              <Input
-                type="number"
-                value={draft.replays}
-                onChange={(e) => set("replays", Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label className="mb-1 block text-xs">السعر التقديري</Label>
-              <Input
-                type="number"
-                value={draft.price}
-                onChange={(e) => set("price", Number(e.target.value))}
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            {priorities.map((p) => (
               <Button
-                key={p.v}
-                size="sm"
-                variant={draft.priority === p.v ? "default" : "secondary"}
-                onClick={() => set("priority", p.v)}
+                size="icon"
+                variant="secondary"
+                onClick={() => {
+                  buzz(20);
+                  set("hours", draft.hours + 1);
+                }}
               >
-                {p.l}
+                +
               </Button>
-            ))}
+            </div>
           </div>
 
           <div className="flex items-center justify-between rounded-2xl bg-secondary/50 px-4 py-3">
             <Label className="text-xs">إكمال 100%</Label>
             <Switch
               checked={draft.fullCompletion}
-              onCheckedChange={(v) => set("fullCompletion", v)}
+              onCheckedChange={(v) => {
+                buzz(30);
+                set("fullCompletion", v);
+              }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between rounded-2xl bg-secondary/50 px-4 py-3">
+            <div>
+              <Label className="text-xs">🎮🎮 لعبناها سوا</Label>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                تُضاف اللعبة والساعات تلقائيًا لملف أخوك
+              </p>
+            </div>
+            <Switch
+              checked={draft.coop}
+              onCheckedChange={(v) => {
+                buzz(30);
+                set("coop", v);
+              }}
             />
           </div>
 
@@ -176,16 +181,6 @@ export function GameEditDialog({
               placeholder="مراجعتك عن اللعبة"
               value={draft.review}
               onChange={(e) => set("review", e.target.value)}
-            />
-            <Textarea
-              placeholder="أفضل لحظة"
-              value={draft.bestMoment}
-              onChange={(e) => set("bestMoment", e.target.value)}
-            />
-            <Textarea
-              placeholder="أسوأ لحظة"
-              value={draft.worstMoment}
-              onChange={(e) => set("worstMoment", e.target.value)}
             />
             <Textarea
               placeholder="ملاحظات خاصة"
