@@ -10,7 +10,6 @@ import {
   Crown,
   PartyPopper,
   BarChart3,
-  Newspaper,
 } from "lucide-react";
 import { useCurrentData, useStore } from "@/lib/store";
 import { computeLevel } from "@/lib/stats";
@@ -20,23 +19,23 @@ import { UserSwitcher } from "./UserSwitcher";
 import { UserAvatar } from "./UserAvatar";
 import type { ReactNode } from "react";
 
-/** التنقل السفلي: 4 تبويبات (من اليمين لليسار) */
+/** التنقل السفلي: 3 تبويبات (من اليمين لليسار) */
 const mainNav = [
   { to: "/home", label: "الرئيسية", icon: LayoutDashboard },
   { to: "/library", label: "المكتبة", icon: Library },
   { to: "/upcoming", label: "الخطة", icon: CalendarClock },
-  { to: "/profile", label: "أنا", icon: User },
 ] as const;
 
 const nav = [
   ...mainNav,
+  { to: "/profile", label: "أنا", icon: User },
   { to: "/stats", label: "الإحصائيات", icon: BarChart3 },
-  { to: "/news", label: "أخبار الجيمرز", icon: Newspaper },
   { to: "/timeline", label: "الخط الزمني", icon: ActivityIcon },
   { to: "/hall", label: "أفضل 10 ألعاب", icon: Crown },
   { to: "/wrap", label: "ملخص السنة", icon: PartyPopper },
   { to: "/settings", label: "الإعدادات", icon: Settings2 },
 ] as const;
+
 
 function LevelBar() {
   const data = useCurrentData();

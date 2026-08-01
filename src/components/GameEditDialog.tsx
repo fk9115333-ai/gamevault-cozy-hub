@@ -167,13 +167,6 @@ export function GameEditDialog({
     completedAt: isCompleted ? (draft.completedAt ?? new Date().toISOString()) : null,
   });
 
-  const save = () => {
-    buzz(30);
-    updateGame(entry.id, normalized());
-    toast.success("تم الحفظ");
-    setOpen(false);
-  };
-
   const finish = () => {
     buzz([40, 60, 40]);
     const payload = { ...normalized(), status: "completed" as Status };
@@ -181,6 +174,19 @@ export function GameEditDialog({
     setOpen(false);
     onCompleted?.({ ...entry, ...payload, completedAt: payload.completedAt ?? new Date().toISOString() });
   };
+
+  const save = () => {
+    // اختيار «مكتملة» يفتح بطاقة الختم مباشرة
+    if (isCompleted && entry.status !== "completed") {
+      finish();
+      return;
+    }
+    buzz(30);
+    updateGame(entry.id, normalized());
+    toast.success("تم الحفظ");
+    setOpen(false);
+  };
+
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

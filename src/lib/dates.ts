@@ -55,3 +55,19 @@ export const countdown = (target: string | null, now: number) => {
     seconds: s % 60,
   };
 };
+
+const dayMonthFmt = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-nu-latn", {
+  day: "numeric",
+  month: "long",
+});
+
+/** «15 صفر» — تاريخ مقروء مختصر بالهجري */
+export const dayMonth = (date: string | Date | null | undefined, fallback = "—") => {
+  const d = toDate(date);
+  if (!d) return fallback;
+  try {
+    return dayMonthFmt.format(d);
+  } catch {
+    return fallback;
+  }
+};

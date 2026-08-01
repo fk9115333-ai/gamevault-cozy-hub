@@ -4,9 +4,9 @@ import { useState } from "react";
 import { getGame, getScreenshots, getSimilar } from "@/lib/rawg";
 import { gregorian, hijri } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
-import { useStore, type Status } from "@/lib/store";
+import { useStore, type GameEntry, type Status } from "@/lib/store";
 import { GameEditDialog } from "@/components/GameEditDialog";
-import { Confetti } from "@/components/Confetti";
+import { CelebrationModal, CompletionCard } from "@/components/CelebrationModal";
 import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
 import { Countdown } from "@/components/Countdown";
@@ -37,7 +37,7 @@ function GamePage() {
   const { id } = Route.useParams();
   const addGame = useStore((s) => s.addGame);
   const [editing, setEditing] = useState(false);
-  const [celebrate, setCelebrate] = useState(false);
+  const [celebrated, setCelebrated] = useState<GameEntry | null>(null);
   const entry = useStore(
     (s) => s.users[s.currentUser].entries.find((e) => e.id === Number(id)) ?? null,
   );
@@ -71,7 +71,7 @@ function GamePage() {
 
   return (
     <div className="relative space-y-8">
-      <Confetti run={celebrate} />
+      <CelebrationModal game={celebrated} onClose={() => setCelebrated(null)} />
 
       {/* dynamic blurred backdrop (PS5 / Apple Music style) */}
       {game.background_image && (
@@ -90,10 +90,7 @@ function GamePage() {
           entry={entry}
           open={editing}
           onOpenChange={setEditing}
-          onCompleted={() => {
-            setCelebrate(true);
-            setTimeout(() => setCelebrate(false), 4000);
-          }}
+          onCompleted={(done) => setCelebrated(done)}
         />
       )}
 
@@ -166,6 +163,13 @@ function GamePage() {
           </div>
         </div>
       </motion.section>
+
+      {entry?.status === "completed" && (
+        <section className="rounded-3xl border border-border bg-card p-6">
+          <h2 className="mb-3 font-display text-lg font-bold">بطاقة الختم</h2>
+          <CompletionCard game={entry} />
+        </section>
+      )}
 
       {entry && (entry.review || entry.notes) && (
         <section className="rounded-3xl border border-border bg-card p-6">
