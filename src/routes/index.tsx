@@ -56,7 +56,10 @@ function Dashboard() {
 
   const pickRandom = () => {
     const pool = data.entries.filter((e) => e.status !== "completed");
-    if (!pool.length) return toast("أضف ألعابًا أولًا");
+    if (!pool.length) {
+      toast("أضف ألعابًا أولًا");
+      return;
+    }
     const pick = pool[Math.floor(Math.random() * pool.length)]!;
     toast.success(`اللعبة المختارة: ${pick.name}`);
   };
