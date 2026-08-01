@@ -1,23 +1,29 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useCurrentData, type Status } from "@/lib/store";
+import { useCurrentData, useStore, type GameEntry, type Status } from "@/lib/store";
 import { GameCard } from "@/components/GameCard";
 import { GameEditDialog } from "@/components/GameEditDialog";
-import { Confetti } from "@/components/Confetti";
+import { CelebrationModal } from "@/components/CelebrationModal";
 import { EmptyState, SectionTitle } from "@/components/ui-bits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import { num } from "@/lib/dates";
+import { buzz } from "@/lib/haptics";
 import { computeFranchises } from "@/lib/stats";
 
 export const Route = createFileRoute("/library")({
   head: () => ({
     meta: [
       { title: "المكتبة — GameHub" },
-      { name: "description", content: "كل ألعابك: قيد اللعب، المكتملة، قائمة الانتظار، الرغبات والسلاسل." },
+      {
+        name: "description",
+        content: "كل ألعابك: قيد اللعب، المكتملة، التالي بترتيبك الخاص، الانتظار والسلاسل.",
+      },
       { property: "og:title", content: "المكتبة — GameHub" },
-      { property: "og:description", content: "إدارة كاملة لمكتبة ألعابك مع تتبع السلاسل." },
+      { property: "og:description", content: "إدارة كاملة لمكتبة ألعابك مع طابور «التالي» والسلاسل." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: LibraryPage,
@@ -27,8 +33,8 @@ const tabs: { v: Status | "all" | "favorites"; l: string }[] = [
   { v: "all", l: "الكل" },
   { v: "current", l: "قيد اللعب" },
   { v: "completed", l: "المكتملة" },
+  { v: "next", l: "التالي" },
   { v: "backlog", l: "الانتظار" },
-  { v: "wishlist", l: "الرغبات" },
   { v: "hype", l: "المرتقبة" },
   { v: "favorites", l: "المفضلة" },
 ];
@@ -42,33 +48,50 @@ const sorts = [
 
 function LibraryPage() {
   const data = useCurrentData();
+  const reorderQueue = useStore((s) => s.reorderQueue);
   const [tab, setTab] = useState<(typeof tabs)[number]["v"]>("all");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<(typeof sorts)[number]["v"]>("added");
-  const [celebrate, setCelebrate] = useState(false);
+  const [celebrated, setCelebrated] = useState<GameEntry | null>(null);
+  const [dragId, setDragId] = useState<number | null>(null);
+
+  const isQueue = tab === "next";
 
   const list = useMemo(() => {
     let out = data.entries.filter((e) =>
       tab === "all" ? true : tab === "favorites" ? e.favorite : e.status === tab,
     );
     if (q.trim()) out = out.filter((e) => e.name.toLowerCase().includes(q.toLowerCase()));
+    if (isQueue)
+      return [...out].sort(
+        (a, b) => (a.queuePosition || 999) - (b.queuePosition || 999) || a.name.localeCompare(b.name),
+      );
     return [...out].sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name);
       if (sort === "rating") return b.personalRating - a.personalRating;
       if (sort === "hours") return b.hours - a.hours;
       return b.addedAt.localeCompare(a.addedAt);
     });
-  }, [data.entries, tab, q, sort]);
+  }, [data.entries, tab, q, sort, isQueue]);
+
+  const move = (from: number, to: number) => {
+    if (to < 0 || to >= list.length || from === to) return;
+    const ids = list.map((e) => e.id);
+    const [moved] = ids.splice(from, 1);
+    ids.splice(to, 0, moved!);
+    buzz(20);
+    reorderQueue(ids);
+  };
 
   const franchises = useMemo(() => computeFranchises(data.entries), [data.entries]);
 
   const backlogHours = data.entries
-    .filter((e) => e.status === "backlog")
+    .filter((e) => e.status === "backlog" || e.status === "next")
     .reduce((s, e) => s + (e.playtimeEstimate || 10), 0);
 
   return (
     <div className="space-y-10">
-      <Confetti run={celebrate} />
+      <CelebrationModal game={celebrated} onClose={() => setCelebrated(null)} />
       <div className="space-y-6">
         <SectionTitle
           title="المكتبة"
@@ -93,32 +116,73 @@ function LibraryPage() {
             placeholder="بحث داخل المكتبة"
             className="h-9 w-44 rounded-xl"
           />
-          <div className="flex gap-1">
-            {sorts.map((s) => (
-              <Button
-                key={s.v}
-                size="sm"
-                variant={sort === s.v ? "default" : "ghost"}
-                className="rounded-xl text-xs"
-                onClick={() => setSort(s.v)}
-              >
-                {s.l}
-              </Button>
-            ))}
-          </div>
+          {!isQueue && (
+            <div className="flex gap-1">
+              {sorts.map((s) => (
+                <Button
+                  key={s.v}
+                  size="sm"
+                  variant={sort === s.v ? "default" : "ghost"}
+                  className="rounded-xl text-xs"
+                  onClick={() => setSort(s.v)}
+                >
+                  {s.l}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
+
+        {isQueue && list.length > 1 && (
+          <p className="rounded-2xl bg-secondary/50 px-4 py-3 text-xs text-muted-foreground">
+            ⠿ اسحب البطاقات لترتيب طابورك — أو استخدم الأسهم على الجوال. الترتيب يُحفظ ويُزامن تلقائيًا.
+          </p>
+        )}
 
         {list.length ? (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
             {list.map((e, i) => (
-              <div key={e.id} className="relative">
-                <GameCard entry={e} index={i} />
+              <div
+                key={e.id}
+                className="relative"
+                draggable={isQueue}
+                onDragStart={() => setDragId(e.id)}
+                onDragOver={(ev) => isQueue && ev.preventDefault()}
+                onDrop={() => {
+                  if (!isQueue || dragId === null) return;
+                  move(
+                    list.findIndex((x) => x.id === dragId),
+                    i,
+                  );
+                  setDragId(null);
+                }}
+              >
+                <GameCard entry={e} index={i} draggable={isQueue} />
+                {isQueue && (
+                  <div className="absolute bottom-3 left-3 flex gap-1">
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="size-8 rounded-full"
+                      aria-label="أعلى"
+                      onClick={() => move(i, i - 1)}
+                    >
+                      <ChevronUp className="size-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="size-8 rounded-full"
+                      aria-label="أسفل"
+                      onClick={() => move(i, i + 1)}
+                    >
+                      <ChevronDown className="size-4" />
+                    </Button>
+                  </div>
+                )}
                 <GameEditDialog
                   entry={e}
-                  onCompleted={() => {
-                    setCelebrate(true);
-                    setTimeout(() => setCelebrate(false), 4000);
-                  }}
+                  onCompleted={(done) => setCelebrated(done)}
                   trigger={
                     <Button
                       size="icon"
@@ -142,7 +206,12 @@ function LibraryPage() {
         {franchises.length ? (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {franchises.map((f) => (
-              <div key={f.name} className="rounded-3xl border border-border bg-card p-4">
+              <Link
+                key={f.name}
+                to="/franchise/$name"
+                params={{ name: f.name }}
+                className="block rounded-3xl border border-border bg-card p-4 surface-hover"
+              >
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="font-display font-bold">{f.name}</h3>
                   <span className="text-xs text-muted-foreground">
@@ -163,7 +232,7 @@ function LibraryPage() {
                     ✨ الجزء التالي المقترح: <span className="font-bold">{f.suggestion}</span>
                   </p>
                 )}
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
