@@ -12,44 +12,45 @@ import { num } from "@/lib/dates";
 import { completionSummary } from "@/lib/completion";
 import { GameCard } from "@/components/GameCard";
 
-/** بطاقة أفقية عريضة للعبة مختومة — خزانة الجوائز */
+/** بطاقة سينمائية عريضة بعرض الشاشة للعبة مختومة — خزانة الجوائز */
 function CompletedCard({ entry, onOpen }: { entry: GameEntry; onOpen: () => void }) {
   const s = completionSummary(entry);
   return (
     <button
       onClick={onOpen}
-      className="group relative flex w-full overflow-hidden rounded-3xl border border-yellow-500/25 bg-card text-right shadow-[0_0_30px_-20px_rgba(234,179,8,0.9)] surface-hover"
+      className="group relative block w-full overflow-hidden rounded-3xl border border-yellow-500/25 bg-card text-right shadow-[0_0_40px_-24px_rgba(234,179,8,0.9)] surface-hover"
     >
-      <div className="relative h-32 w-36 shrink-0 overflow-hidden sm:h-36 sm:w-56">
+      <div className="relative aspect-[16/7] w-full overflow-hidden sm:aspect-[21/7]">
         {entry.image ? (
           <img
             src={entry.image}
             alt={entry.name}
             loading="lazy"
-            className="size-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="size-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
         ) : (
           <div className="size-full bg-secondary" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-l from-card via-card/35 to-transparent" />
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 p-4">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="truncate font-display text-sm font-bold">
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-l from-background/70 via-transparent to-transparent" />
+
+        <span className="absolute right-4 top-4 rounded-full border border-yellow-500/40 bg-background/70 px-3 py-1 text-[11px] font-bold backdrop-blur">
+          {s.badge.emoji} {s.badge.label}
+        </span>
+
+        <div className="absolute inset-x-4 bottom-4 space-y-2">
+          <h3 className="font-display text-base font-black leading-tight sm:text-xl">
             <bdi>{entry.name}</bdi>
           </h3>
-          <span className="shrink-0 rounded-full border border-yellow-500/40 bg-background/70 px-2.5 py-1 text-[10px] font-bold backdrop-blur">
-            {s.badge.emoji} {s.badge.label}
-          </span>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-          <span className="flex items-center gap-1 text-accent">
-            <Star className="size-3 fill-current" />
-            {entry.personalRating ? `${num(entry.personalRating, 1)}/10` : "قيد التقييم"}
-          </span>
-          <span>{num(s.hours, 1)} ساعة</span>
-          <span>خلال {num(s.days ?? 1)} يوم</span>
-          {entry.fullCompletion && <span>🏆 100%</span>}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1 text-accent">
+              <Star className="size-3.5 fill-current" />
+              {entry.personalRating ? `${num(entry.personalRating, 1)}/10` : "قيد التقييم"}
+            </span>
+            <span>{num(s.hours, 1)} ساعة</span>
+            <span>خلال {num(s.days ?? 1)} يوم</span>
+            {entry.fullCompletion && <span>🏆 100%</span>}
+          </div>
         </div>
       </div>
     </button>
@@ -155,9 +156,10 @@ function LibraryPage() {
         {!list.length ? (
           <EmptyState text="لا توجد ألعاب هنا بعد." />
         ) : tab === "completed" ? (
-          <div className="space-y-3">
+          <div className="flex w-full flex-col gap-4">
             {list.map((e) => (
-              <div key={e.id} className="relative">
+              <div key={e.id} className="relative w-full">
+
                 <CompletedCard entry={e} onOpen={() => setReviewed(e)} />
                 <GameEditDialog
                   entry={e}
