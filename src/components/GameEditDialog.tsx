@@ -66,13 +66,18 @@ export function SessionBox({ entryId, onDone }: { entryId: number; onDone?: () =
   };
 
   return (
-    <div className="space-y-3 rounded-2xl bg-secondary/50 p-4">
-      <Label className="text-xs font-bold">⏱️ تسجيل جلسة سريعة</Label>
-      <div className="grid grid-cols-4 gap-2">
+    <div className="space-y-4 rounded-3xl border border-yellow-500/25 bg-secondary/50 p-4">
+      <Label className="text-sm font-bold">⏱️ تسجيل جلسة سريعة</Label>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {QUICK.map((m) => (
-          <Button key={m} variant="secondary" size="sm" className="rounded-xl" onClick={() => log(m)}>
+          <button
+            key={m}
+            type="button"
+            onClick={() => log(m)}
+            className="h-14 rounded-2xl border-2 border-yellow-500/50 bg-background/60 font-display text-base font-black text-primary transition-all hover:bg-primary hover:text-primary-foreground active:scale-95"
+          >
             {m < 60 ? `${m} د` : `${m / 60} س`}
-          </Button>
+          </button>
         ))}
       </div>
     </div>
