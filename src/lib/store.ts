@@ -12,8 +12,17 @@ import {
 } from "./sync";
 
 export type UserId = "faisal" | "mishal";
-export type Status = "current" | "completed" | "backlog" | "wishlist" | "hype";
+/** الحالات: مكتملة، قيد اللعب، التالي (طابور مرتّب)، الانتظار، المرتقبة (ألعاب لم تصدر) */
+export type Status = "current" | "completed" | "next" | "backlog" | "hype";
 export type Priority = "high" | "medium" | "low";
+
+export type PlaySession = {
+  id: string;
+  date: string; // YYYY-MM-DD
+  start: string; // HH:MM
+  end: string; // HH:MM
+  minutes: number;
+};
 
 export type GameEntry = {
   id: number;
@@ -30,9 +39,15 @@ export type GameEntry = {
   status: Status;
   favorite: boolean;
   favoriteOrder: number;
+  /** ترتيب الطابور في «التالي» */
+  queuePosition: number;
   progress: number;
   hours: number;
   personalRating: number;
+  recommend: boolean;
+  replay: boolean;
+  hallOfFame: boolean;
+  sessions: PlaySession[];
   review: string;
   notes: string;
   bestMoment: string;
@@ -40,16 +55,25 @@ export type GameEntry = {
   priority: Priority;
   coop: boolean;
   fullCompletion: boolean;
-  /** ختمتها قديمًا — تُحتسب في الإجماليات لكن تُستثنى من الرسوم الزمنية */
-  legacy: boolean;
   startedAt: string | null;
   completedAt: string | null;
   addedAt: string;
 };
 
+export type ActivityType =
+  | "start"
+  | "finish"
+  | "add"
+  | "favorite"
+  | "achievement"
+  | "goal"
+  | "rate"
+  | "platinum"
+  | "session";
+
 export type Activity = {
   id: string;
-  type: "start" | "finish" | "add" | "favorite" | "achievement" | "goal";
+  type: ActivityType;
   text: string;
   at: string;
 };
@@ -62,24 +86,26 @@ export type Profile = {
   bio: string;
   favoriteGame: string;
   favoriteGenre: string;
-  /** بداية رحلة التختيم — YYYY-MM */
-  gamingStartDate: string | null;
 };
 
 type UserData = { profile: Profile; entries: GameEntry[]; activities: Activity[]; goals: Goal[] };
 
 type State = {
   currentUser: UserId;
+  /** هل اختار المستخدم ملفه من شاشة البداية في هذه الجلسة */
+  profileChosen: boolean;
   hydrated: boolean;
   users: Record<UserId, UserData>;
   setUser: (u: UserId) => void;
+  chooseProfile: (u: UserId) => void;
   addGame: (game: RawgGame, status: Status) => void;
   updateGame: (id: number, patch: Partial<GameEntry>) => void;
   removeGame: (id: number) => void;
   toggleFavorite: (id: number) => void;
   completeGame: (id: number, data: Partial<GameEntry>) => void;
+  reorderQueue: (ids: number[]) => void;
+  addSession: (id: number, session: Omit<PlaySession, "id">) => void;
   updateProfile: (patch: Partial<Profile>) => void;
-  setGamingStartDate: (v: string) => void;
   addGoal: (g: Omit<Goal, "id">) => void;
   removeGoal: (id: string) => void;
   importData: (raw: string) => boolean;
@@ -87,7 +113,7 @@ type State = {
 };
 
 const emptyUser = (name: string, avatar: string, bio: string): UserData => ({
-  profile: { name, avatar, bio, favoriteGame: "—", favoriteGenre: "—", gamingStartDate: null },
+  profile: { name, avatar, bio, favoriteGame: "—", favoriteGenre: "—" },
   entries: [],
   activities: [],
   goals: [
@@ -118,9 +144,14 @@ export const entryFromRawg = (g: RawgGame, status: Status): GameEntry => ({
   status,
   favorite: false,
   favoriteOrder: 0,
+  queuePosition: 0,
   progress: status === "completed" ? 100 : 0,
   hours: 0,
   personalRating: 0,
+  recommend: false,
+  replay: false,
+  hallOfFame: false,
+  sessions: [],
   review: "",
   notes: "",
   bestMoment: "",
@@ -128,29 +159,41 @@ export const entryFromRawg = (g: RawgGame, status: Status): GameEntry => ({
   priority: "medium",
   coop: false,
   fullCompletion: false,
-  legacy: false,
   startedAt: status === "current" ? new Date().toISOString() : null,
   completedAt: status === "completed" ? new Date().toISOString() : null,
   addedAt: new Date().toISOString(),
 });
 
-const statusLabel: Record<Status, string> = {
+export const statusLabel: Record<Status, string> = {
   current: "قيد اللعب",
   completed: "المكتملة",
-  backlog: "قائمة الانتظار",
-  wishlist: "قائمة الرغبات",
+  next: "التالي",
+  backlog: "الانتظار",
   hype: "المرتقبة",
 };
 
 export const otherUser = (u: UserId): UserId => (u === "faisal" ? "mishal" : "faisal");
 
+/** يضبط تواريخ البدء/الختم تلقائيًا حسب تغيّر الحالة */
+export function applyStatusDates(before: GameEntry, after: GameEntry): GameEntry {
+  const now = new Date().toISOString();
+  let { startedAt, completedAt } = after;
+  if (after.status === "current" && before.status !== "current" && !startedAt) startedAt = now;
+  if (after.status === "completed") {
+    if (!completedAt) completedAt = now;
+    if (!startedAt) startedAt = before.startedAt ?? now;
+  }
+  if (after.status !== "completed") completedAt = null;
+  return { ...after, startedAt, completedAt, progress: after.status === "completed" ? 100 : after.progress };
+}
+
 export const useStore = create<State>()(
   persist(
     (set, get) => {
-      const log = (u: UserData, uid: UserId, type: Activity["type"], text: string): UserData => {
+      const log = (u: UserData, uid: UserId, type: ActivityType, text: string): UserData => {
         const activity: Activity = { id: crypto.randomUUID(), type, text, at: new Date().toISOString() };
         pushActivity(uid, activity);
-        return { ...u, activities: [activity, ...u.activities].slice(0, 200) };
+        return { ...u, activities: [activity, ...u.activities].slice(0, 300) };
       };
 
       const mutate = (fn: (u: UserData, uid: UserId) => UserData) =>
@@ -172,7 +215,7 @@ export const useStore = create<State>()(
                     status: entry.status,
                     progress: entry.progress,
                     fullCompletion: entry.fullCompletion,
-                    legacy: entry.legacy,
+                    startedAt: entry.startedAt,
                     completedAt: entry.completedAt,
                   }
                 : e,
@@ -185,19 +228,28 @@ export const useStore = create<State>()(
       const applyEntry = (
         id: number,
         patch: Partial<GameEntry>,
-        activity?: (e: GameEntry) => [Activity["type"], string],
+        activity?: (e: GameEntry) => [ActivityType, string][],
       ) =>
         set((s) => {
           const uid = s.currentUser;
           const data = s.users[uid];
           const before = data.entries.find((e) => e.id === id);
           if (!before) return s;
-          const after = { ...before, ...patch };
+          const after = applyStatusDates(before, { ...before, ...patch });
           let next: UserData = { ...data, entries: data.entries.map((e) => (e.id === id ? after : e)) };
-          if (activity) {
-            const [type, text] = activity(after);
-            next = log(next, uid, type, text);
-          }
+
+          // أحداث الخط الزمني التلقائية
+          const events: [ActivityType, string][] = activity ? activity(after) : [];
+          if (before.status !== "current" && after.status === "current")
+            events.push(["start", `بدأ لعب «${after.name}»`]);
+          if (before.personalRating !== after.personalRating && after.personalRating > 0)
+            events.push(["rate", `قيّم «${after.name}» بـ ${after.personalRating}/10`]);
+          if (!before.fullCompletion && after.fullCompletion)
+            events.push(["platinum", `حصل على البلاتينيوم في «${after.name}» 🏆`]);
+          events.forEach(([t, text]) => {
+            next = log(next, uid, t, text);
+          });
+
           pushEntry(uid, after);
           const users = { ...s.users, [uid]: next };
           return after.coop ? { users: syncCoop({ ...s, users }, after) } : { users };
@@ -205,30 +257,27 @@ export const useStore = create<State>()(
 
       return {
         currentUser: "faisal",
+        profileChosen: false,
         hydrated: false,
         users: {
           faisal: emptyUser("فيصل", "🎮", "لاعب رعب ومحب لسلسلة Resident Evil."),
           mishal: emptyUser("مشعل", "🕹️", "عاشق ألعاب القصة والعوالم المفتوحة."),
         },
         setUser: (u) => set({ currentUser: u }),
+        chooseProfile: (u) => set({ currentUser: u, profileChosen: true }),
         addGame: (g, wanted) =>
           mutate((u, uid) => {
             const status = resolveStatus(g.released, wanted);
             const existing = u.entries.find((e) => e.id === g.id);
             if (existing) {
-              const after: GameEntry = {
-                ...existing,
-                status,
-                progress: status === "completed" ? 100 : existing.progress,
-                completedAt:
-                  status === "completed"
-                    ? (existing.completedAt ?? new Date().toISOString())
-                    : existing.completedAt,
-              };
+              const after = applyStatusDates(existing, { ...existing, status });
               pushEntry(uid, after);
               return { ...u, entries: u.entries.map((e) => (e.id === g.id ? after : e)) };
             }
             const entry = entryFromRawg(g, status);
+            if (status === "next")
+              entry.queuePosition =
+                Math.max(0, ...u.entries.filter((e) => e.status === "next").map((e) => e.queuePosition)) + 1;
             pushEntry(uid, entry);
             return log(
               { ...u, entries: [entry, ...u.entries] },
@@ -250,7 +299,7 @@ export const useStore = create<State>()(
             const after = { ...entry, favorite: !entry.favorite };
             pushEntry(uid, after);
             const next = { ...u, entries: u.entries.map((e) => (e.id === id ? after : e)) };
-            return after.favorite ? log(next, uid, "favorite", `أُضيفت «${entry.name}» إلى المفضلة`) : next;
+            return after.favorite ? log(next, uid, "favorite", `أضاف «${entry.name}» إلى المفضلة`) : next;
           }),
         completeGame: (id, data) =>
           applyEntry(
@@ -261,18 +310,67 @@ export const useStore = create<State>()(
               progress: 100,
               completedAt: data.completedAt ?? new Date().toISOString(),
             },
-            (e) => [
-              "finish",
-              `ختم «${e.name}» 🎉${e.personalRating ? ` وأعطاها تقييم ${e.personalRating}/10` : ""}`,
-            ],
+            (e) => {
+              const days =
+                e.startedAt && e.completedAt
+                  ? Math.max(
+                      0,
+                      Math.round(
+                        (new Date(e.completedAt).getTime() - new Date(e.startedAt).getTime()) / 86400000,
+                      ),
+                    )
+                  : null;
+              return [
+                [
+                  "finish",
+                  `ختم «${e.name}» 🎉${days !== null ? ` خلال ${days} يوم` : ""}${
+                    e.personalRating ? ` وأعطاها ${e.personalRating}/10` : ""
+                  }`,
+                ],
+              ];
+            },
           ),
+        reorderQueue: (ids) =>
+          mutate((u, uid) => {
+            const entries = u.entries.map((e) => {
+              const i = ids.indexOf(e.id);
+              return i === -1 ? e : { ...e, queuePosition: i + 1 };
+            });
+            pushEntries(uid, entries.filter((e) => ids.includes(e.id)));
+            return { ...u, entries };
+          }),
+        addSession: (id, session) =>
+          set((s) => {
+            const uid = s.currentUser;
+            const data = s.users[uid];
+            const entry = data.entries.find((e) => e.id === id);
+            if (!entry) return s;
+            const full: PlaySession = { ...session, id: crypto.randomUUID() };
+            const after: GameEntry = {
+              ...entry,
+              sessions: [full, ...entry.sessions].slice(0, 200),
+              hours: Math.round((entry.hours + full.minutes / 60) * 10) / 10,
+            };
+            let next: UserData = {
+              ...data,
+              entries: data.entries.map((e) => (e.id === id ? after : e)),
+            };
+            next = log(
+              next,
+              uid,
+              "session",
+              `لعب ${Math.round((full.minutes / 60) * 10) / 10} ساعة في «${after.name}»`,
+            );
+            pushEntry(uid, after);
+            const users = { ...s.users, [uid]: next };
+            return after.coop ? { users: syncCoop({ ...s, users }, after) } : { users };
+          }),
         updateProfile: (patch) =>
           mutate((u, uid) => {
             const profile = { ...u.profile, ...patch };
             pushProfile(uid, profile);
             return { ...u, profile };
           }),
-        setGamingStartDate: (v) => get().updateProfile({ gamingStartDate: v }),
         addGoal: (g) => mutate((u) => ({ ...u, goals: [...u.goals, { ...g, id: crypto.randomUUID() }] })),
         removeGoal: (id) => mutate((u) => ({ ...u, goals: u.goals.filter((g) => g.id !== id) })),
         importData: (raw) => {
@@ -316,7 +414,7 @@ export const useStore = create<State>()(
       };
     },
     {
-      name: "gamehub-store-v2",
+      name: "gamehub-store-v3",
       partialize: (s) => ({ currentUser: s.currentUser, users: s.users }) as unknown as State,
     },
   ),
