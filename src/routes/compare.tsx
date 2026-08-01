@@ -68,7 +68,7 @@ function ComparePage() {
               <Cell label="مكتملة" value={num(u.s.completed)} />
               <Cell label="ساعات" value={num(u.s.hours)} />
               <Cell label="التصنيف المفضل" value={u.s.topGenre} />
-              <Cell label="المنصة المفضلة" value={u.s.topPlatform} />
+              <Cell label="لعبناها سوا" value={num(u.s.coop)} />
               <Cell label="نسبة الإكمال" value={`${num(u.s.completionRate)}%`} />
               <Cell label="أنشط شهر" value={u.s.mostActiveMonth} />
             </div>
