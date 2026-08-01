@@ -14,6 +14,8 @@ import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as CollectionsRouteImport } from './routes/collections'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as UpcomingRouteImport } from './routes/upcoming'
 
@@ -42,6 +44,16 @@ const LibraryRoute = LibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StatsRoute = StatsRouteImport.update({
   id: '/stats',
   path: '/stats',
@@ -59,6 +71,8 @@ export interface FileRoutesByFullPath {
   '/collections': typeof CollectionsRoute
   '/compare': typeof CompareRoute
   '/library': typeof LibraryRoute
+  '/profile': typeof ProfileRoute
+  '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
   '/upcoming': typeof UpcomingRoute
 }
@@ -68,6 +82,8 @@ export interface FileRoutesByTo {
   '/collections': typeof CollectionsRoute
   '/compare': typeof CompareRoute
   '/library': typeof LibraryRoute
+  '/profile': typeof ProfileRoute
+  '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
   '/upcoming': typeof UpcomingRoute
 }
@@ -78,6 +94,8 @@ export interface FileRoutesById {
   '/collections': typeof CollectionsRoute
   '/compare': typeof CompareRoute
   '/library': typeof LibraryRoute
+  '/profile': typeof ProfileRoute
+  '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
   '/upcoming': typeof UpcomingRoute
 }
@@ -89,6 +107,8 @@ export interface FileRouteTypes {
     | '/collections'
     | '/compare'
     | '/library'
+    | '/profile'
+    | '/settings'
     | '/stats'
     | '/upcoming'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +118,8 @@ export interface FileRouteTypes {
     | '/collections'
     | '/compare'
     | '/library'
+    | '/profile'
+    | '/settings'
     | '/stats'
     | '/upcoming'
   id:
@@ -107,6 +129,8 @@ export interface FileRouteTypes {
     | '/collections'
     | '/compare'
     | '/library'
+    | '/profile'
+    | '/settings'
     | '/stats'
     | '/upcoming'
   fileRoutesById: FileRoutesById
@@ -117,6 +141,8 @@ export interface RootRouteChildren {
   CollectionsRoute: typeof CollectionsRoute
   CompareRoute: typeof CompareRoute
   LibraryRoute: typeof LibraryRoute
+  ProfileRoute: typeof ProfileRoute
+  SettingsRoute: typeof SettingsRoute
   StatsRoute: typeof StatsRoute
   UpcomingRoute: typeof UpcomingRoute
 }
@@ -158,6 +184,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stats': {
       id: '/stats'
       path: '/stats'
@@ -181,6 +221,8 @@ const rootRouteChildren: RootRouteChildren = {
   CollectionsRoute: CollectionsRoute,
   CompareRoute: CompareRoute,
   LibraryRoute: LibraryRoute,
+  ProfileRoute: ProfileRoute,
+  SettingsRoute: SettingsRoute,
   StatsRoute: StatsRoute,
   UpcomingRoute: UpcomingRoute,
 }

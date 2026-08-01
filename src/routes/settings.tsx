@@ -91,7 +91,7 @@ function SettingsPage() {
             <div key={r} className="flex items-center justify-between rounded-2xl bg-secondary/40 px-4 py-3">
               <Label className="text-sm">{r}</Label>
               <Switch
-                checked={on[r]}
+                checked={on[r] ?? true}
                 onCheckedChange={(v) => setOn((prev) => ({ ...prev, [r]: v }))}
               />
             </div>
