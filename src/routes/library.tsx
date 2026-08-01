@@ -7,9 +7,53 @@ import { CelebrationModal } from "@/components/CelebrationModal";
 import { EmptyState, SectionTitle } from "@/components/ui-bits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil } from "lucide-react";
+import { Pencil, Star } from "lucide-react";
 import { num } from "@/lib/dates";
 import { computeFranchises } from "@/lib/stats";
+import { completionSummary } from "@/lib/completion";
+
+/** بطاقة لعبة مختومة — غرفة الإنجازات */
+function CompletedCard({ entry, onOpen }: { entry: GameEntry; onOpen: () => void }) {
+  const s = completionSummary(entry);
+  return (
+    <button
+      onClick={onOpen}
+      className="group relative w-full overflow-hidden rounded-3xl border border-yellow-500/25 bg-card text-right surface-hover"
+    >
+      <div className="relative h-32 overflow-hidden">
+        {entry.image ? (
+          <img
+            src={entry.image}
+            alt={entry.name}
+            loading="lazy"
+            className="size-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+        ) : (
+          <div className="size-full bg-secondary" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
+        <span className="absolute right-3 top-3 rounded-full border border-yellow-500/40 bg-background/80 px-2.5 py-1 text-[11px] font-bold backdrop-blur">
+          {s.badge.emoji} {s.badge.label}
+        </span>
+      </div>
+      <div className="space-y-2 p-4">
+        <h3 className="truncate font-display text-sm font-bold">
+          <bdi>{entry.name}</bdi>
+        </h3>
+        <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1 text-accent">
+            <Star className="size-3 fill-current" />
+            {entry.personalRating ? `${num(entry.personalRating, 1)}/10` : "قيد التقييم"}
+          </span>
+          <span>{num(s.hours, 1)} ساعة</span>
+          <span>خلال {num(s.days ?? 1)} يوم</span>
+          {entry.fullCompletion && <span>🏆 100%</span>}
+        </div>
+      </div>
+    </button>
+  );
+}
+
 
 
 export const Route = createFileRoute("/library")({
@@ -49,6 +93,7 @@ function LibraryPage() {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<(typeof sorts)[number]["v"]>("added");
   const [celebrated, setCelebrated] = useState<GameEntry | null>(null);
+  const [reviewed, setReviewed] = useState<GameEntry | null>(null);
 
   const list = useMemo(() => {
     let out = data.entries.filter((e) => (tab === "all" ? true : e.status === tab));
@@ -66,6 +111,7 @@ function LibraryPage() {
   return (
     <div className="space-y-10">
       <CelebrationModal game={celebrated} onClose={() => setCelebrated(null)} />
+      <CelebrationModal game={reviewed} review onClose={() => setReviewed(null)} />
       <div className="space-y-6">
         <SectionTitle title="المكتبة" subtitle={`${num(list.length)} لعبة`} />
 
@@ -103,27 +149,51 @@ function LibraryPage() {
         </div>
 
         {list.length ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-            {list.map((e, i) => (
-              <div key={e.id} className="relative">
-                <GameCard entry={e} index={i} />
-                <GameEditDialog
-                  entry={e}
-                  onCompleted={(done) => setCelebrated(done)}
-                  trigger={
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      className="absolute left-3 top-14 size-9 rounded-full"
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                  }
-                />
-              </div>
-            ))}
-          </div>
+          tab === "completed" ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {list.map((e) => (
+                <div key={e.id} className="relative">
+                  <CompletedCard entry={e} onOpen={() => setReviewed(e)} />
+                  <GameEditDialog
+                    entry={e}
+                    onCompleted={(done) => setCelebrated(done)}
+                    trigger={
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="absolute left-3 top-3 size-9 rounded-full"
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+              {list.map((e, i) => (
+                <div key={e.id} className="relative">
+                  <GameCard entry={e} index={i} />
+                  <GameEditDialog
+                    entry={e}
+                    onCompleted={(done) => setCelebrated(done)}
+                    trigger={
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="absolute left-3 top-14 size-9 rounded-full"
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          )
         ) : (
+
           <EmptyState text="لا توجد ألعاب هنا بعد." />
         )}
       </div>
