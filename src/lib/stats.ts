@@ -9,56 +9,41 @@ const topOf = (values: (string | null | undefined)[]) => {
   return [...map.entries()].sort((a, b) => b[1] - a[1]);
 };
 
-/** عدد الأشهر المنقضية منذ بداية رحلة التختيم (YYYY-MM) */
-export function monthsSince(start: string | null | undefined) {
-  if (!start) return null;
-  const [y, m] = start.split("-").map(Number);
-  if (!y || !m) return null;
-  const now = new Date();
-  const months = (now.getFullYear() - y) * 12 + (now.getMonth() + 1 - m) + 1;
-  return Math.max(1, months);
-}
-
-export function computeStats(entries: GameEntry[], gamingStartDate?: string | null) {
+export function computeStats(entries: GameEntry[]) {
   const completed = byStatus(entries, "completed");
   const current = byStatus(entries, "current");
   const backlog = byStatus(entries, "backlog");
-  const wishlist = byStatus(entries, "wishlist");
+  const next = byStatus(entries, "next");
   const hype = byStatus(entries, "hype");
   const hours = entries.reduce((s, e) => s + (e.hours || 0), 0);
   const rated = entries.filter((e) => e.personalRating > 0);
   const genres = topOf(entries.flatMap((e) => e.genres));
   const sortedHours = [...completed].sort((a, b) => b.hours - a.hours);
 
-  // الرسوم الزمنية: تُقرأ من تاريخ الختم الفعلي، وتُستثنى الألعاب القديمة (legacy)
+  // الرسوم الزمنية تُقرأ من تاريخ الختم الفعلي
   const monthly = new Map<string, { games: number; hours: number }>();
   completed.forEach((e) => {
-    if (e.legacy || !e.completedAt) return;
+    if (!e.completedAt) return;
     const k = e.completedAt.slice(0, 7);
     const prev = monthly.get(k) ?? { games: 0, hours: 0 };
     monthly.set(k, { games: prev.games + 1, hours: prev.hours + e.hours });
   });
 
-  // المدى الزمني: من بداية الرحلة إن وُجدت، وإلا من أول لعبة أُضيفت
-  const startMonths = monthsSince(gamingStartDate);
   const firstAt = [...entries].sort((a, b) => a.addedAt.localeCompare(b.addedAt))[0]?.addedAt;
-  const days = startMonths
-    ? startMonths * 30.4
-    : firstAt
-      ? Math.max(1, Math.ceil((Date.now() - new Date(firstAt).getTime()) / 86400000))
-      : 1;
-  const months = startMonths ?? Math.max(1, monthly.size);
+  const days = firstAt
+    ? Math.max(1, Math.ceil((Date.now() - new Date(firstAt).getTime()) / 86400000))
+    : 1;
+  const months = Math.max(1, Math.ceil(days / 30.4));
 
   return {
     total: entries.length,
     completed: completed.length,
     current: current.length,
     backlog: backlog.length,
-    wishlist: wishlist.length,
+    next: next.length,
     hype: hype.length,
     favorites: entries.filter((e) => e.favorite).length,
     coop: entries.filter((e) => e.coop).length,
-    legacy: entries.filter((e) => e.legacy).length,
     hours,
     avgRating: rated.length ? rated.reduce((s, e) => s + e.personalRating, 0) / rated.length : 0,
     completionRate: entries.length ? (completed.length / entries.length) * 100 : 0,
@@ -72,6 +57,7 @@ export function computeStats(entries: GameEntry[], gamingStartDate?: string | nu
     avgMonthlyCompleted: completed.length / months,
   };
 }
+
 
 
 export type Achievement = {
