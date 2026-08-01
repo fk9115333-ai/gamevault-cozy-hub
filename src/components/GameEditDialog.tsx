@@ -139,12 +139,14 @@ export function GameEditDialog({
   onCompleted,
   open: openProp,
   onOpenChange,
+  initialStatus,
 }: {
   entry: GameEntry;
   trigger?: ReactNode;
   onCompleted?: (e: GameEntry) => void;
   open?: boolean;
   onOpenChange?: (o: boolean) => void;
+  initialStatus?: Status;
 }) {
   const [openState, setOpenState] = useState(false);
   const controlled = openProp !== undefined;
@@ -160,9 +162,10 @@ export function GameEditDialog({
   const removeGame = useStore((s) => s.removeGame);
 
   useEffect(() => {
-    if (open) setDraft(entry);
+    if (open) setDraft(initialStatus ? { ...entry, status: initialStatus } : entry);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, entry.id]);
+  }, [open, entry.id, initialStatus]);
+
 
   const set = <K extends keyof GameEntry>(k: K, v: GameEntry[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
