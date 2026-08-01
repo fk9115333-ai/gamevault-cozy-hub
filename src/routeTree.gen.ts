@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as CollectionsRouteImport } from './routes/collections'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as UpcomingRouteImport } from './routes/upcoming'
@@ -20,9 +22,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AchievementsRoute = AchievementsRouteImport.update({
+  id: '/achievements',
+  path: '/achievements',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CollectionsRoute = CollectionsRouteImport.update({
   id: '/collections',
   path: '/collections',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LibraryRoute = LibraryRouteImport.update({
@@ -43,14 +55,18 @@ const UpcomingRoute = UpcomingRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/achievements': typeof AchievementsRoute
   '/collections': typeof CollectionsRoute
+  '/compare': typeof CompareRoute
   '/library': typeof LibraryRoute
   '/stats': typeof StatsRoute
   '/upcoming': typeof UpcomingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/achievements': typeof AchievementsRoute
   '/collections': typeof CollectionsRoute
+  '/compare': typeof CompareRoute
   '/library': typeof LibraryRoute
   '/stats': typeof StatsRoute
   '/upcoming': typeof UpcomingRoute
@@ -58,22 +74,48 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/achievements': typeof AchievementsRoute
   '/collections': typeof CollectionsRoute
+  '/compare': typeof CompareRoute
   '/library': typeof LibraryRoute
   '/stats': typeof StatsRoute
   '/upcoming': typeof UpcomingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/collections' | '/library' | '/stats' | '/upcoming'
+  fullPaths:
+    | '/'
+    | '/achievements'
+    | '/collections'
+    | '/compare'
+    | '/library'
+    | '/stats'
+    | '/upcoming'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/collections' | '/library' | '/stats' | '/upcoming'
-  id: '__root__' | '/' | '/collections' | '/library' | '/stats' | '/upcoming'
+  to:
+    | '/'
+    | '/achievements'
+    | '/collections'
+    | '/compare'
+    | '/library'
+    | '/stats'
+    | '/upcoming'
+  id:
+    | '__root__'
+    | '/'
+    | '/achievements'
+    | '/collections'
+    | '/compare'
+    | '/library'
+    | '/stats'
+    | '/upcoming'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AchievementsRoute: typeof AchievementsRoute
   CollectionsRoute: typeof CollectionsRoute
+  CompareRoute: typeof CompareRoute
   LibraryRoute: typeof LibraryRoute
   StatsRoute: typeof StatsRoute
   UpcomingRoute: typeof UpcomingRoute
@@ -88,11 +130,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/achievements': {
+      id: '/achievements'
+      path: '/achievements'
+      fullPath: '/achievements'
+      preLoaderRoute: typeof AchievementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/collections': {
       id: '/collections'
       path: '/collections'
       fullPath: '/collections'
       preLoaderRoute: typeof CollectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/library': {
@@ -121,7 +177,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AchievementsRoute: AchievementsRoute,
   CollectionsRoute: CollectionsRoute,
+  CompareRoute: CompareRoute,
   LibraryRoute: LibraryRoute,
   StatsRoute: StatsRoute,
   UpcomingRoute: UpcomingRoute,
