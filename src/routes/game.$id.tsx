@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Countdown } from "@/components/Countdown";
 import { motion } from "motion/react";
 import { ExternalLink } from "lucide-react";
+import { Lightbox } from "@/components/Lightbox";
 
 export const Route = createFileRoute("/game/$id")({
   head: () => ({
@@ -38,6 +39,7 @@ function GamePage() {
   const addGame = useStore((s) => s.addGame);
   const [editing, setEditing] = useState(false);
   const [celebrated, setCelebrated] = useState<GameEntry | null>(null);
+  const [shotIndex, setShotIndex] = useState<number | null>(null);
   const entry = useStore(
     (s) => s.users[s.currentUser].entries.find((e) => e.id === Number(id)) ?? null,
   );
