@@ -192,20 +192,6 @@ function LibraryPage() {
                   ))}
                 </Rail>
               )}
-              {!!rails.backlog.length && (
-                <Rail title="ناوي أختمها" subtitle="قائمة الانتظار">
-                  {rails.backlog.map((e, i) => (
-                    <RailCard key={e.id} entry={e} index={i} />
-                  ))}
-                </Rail>
-              )}
-              {!!rails.hype.length && (
-                <Rail title="المرتقبة" subtitle="إصدارات قادمة">
-                  {rails.hype.map((e, i) => (
-                    <RailCard key={e.id} entry={e} index={i} />
-                  ))}
-                </Rail>
-              )}
               {!!rails.completed.length && (
                 <Rail title="قاعة الألعاب المكتملة" subtitle="إنجازاتك">
                   {rails.completed.map((e, i) => (
