@@ -94,7 +94,7 @@ function Dashboard() {
               >
                 <span className="text-xs text-muted-foreground">تلعب الآن</span>
                 <span className="font-display text-sm font-bold">{hero.name}</span>
-                <span className="text-xs text-primary">{hero.progress}%</span>
+                <span className="text-xs text-primary">{num(hero.hours, 1)} ساعة</span>
               </Link>
             ) : (
               <span className="rounded-2xl glass px-4 py-3 text-sm text-muted-foreground">
