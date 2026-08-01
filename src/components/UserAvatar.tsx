@@ -17,16 +17,6 @@ export function UserAvatar({
   const style = { width: size, height: size } as const;
   const frame = framed ? "border-2 border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.4)]" : "";
 
-  if (!src)
-    return (
-      <span
-        style={{ ...style, fontSize: size * 0.45 }}
-        className={cn("grid shrink-0 place-items-center rounded-full bg-secondary", frame, className)}
-      >
-        {value}
-      </span>
-    );
-
   return (
     <img
       src={src}
