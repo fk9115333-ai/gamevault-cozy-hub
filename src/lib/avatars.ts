@@ -18,8 +18,12 @@ export const AVATARS: AvatarOption[] = [
 ];
 
 /** يرجّع رابط صورة الشخصية إن كانت القيمة معرّف شخصية، وإلا null (إيموجي قديم) */
-export const avatarSrc = (value: string): string | null =>
-  AVATARS.find((a) => a.id === value)?.src ?? null;
+const legacy: Record<string, string> = { "🎮": "outlaw", "🕹️": "ninja" };
+
+export const avatarSrc = (value: string): string | null => {
+  const id = legacy[value] ?? value;
+  return AVATARS.find((a) => a.id === id)?.src ?? null;
+};
 
 export const defaultAvatar: Record<string, string> = {
   faisal: "outlaw",
