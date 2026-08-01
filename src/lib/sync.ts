@@ -132,7 +132,7 @@ export const pushProfile = (userId: UserId, p: Profile) => {
         favorite_game: p.favoriteGame,
         favorite_genre: p.favoriteGenre,
         updated_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+
       },
       { onConflict: "user_id" },
     )
