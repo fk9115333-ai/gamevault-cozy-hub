@@ -1,3 +1,4 @@
+import { UserAvatar } from "@/components/UserAvatar";
 import { createFileRoute } from "@tanstack/react-router";
 import { useStore, useCurrentData } from "@/lib/store";
 import { computeStats } from "@/lib/stats";
@@ -119,9 +120,7 @@ function StatsPage() {
           ].map((u) => (
             <div key={u.p.name} className="rounded-3xl border border-border bg-card p-5">
               <div className="flex items-center gap-3">
-                <span className="grid size-12 place-items-center rounded-2xl bg-secondary text-2xl">
-                  {u.p.avatar}
-                </span>
+                <UserAvatar value={u.p.avatar} size={48} />
                 <div className="min-w-0">
                   <h3 className="font-display text-lg font-extrabold">{u.p.name}</h3>
                   <p className="truncate text-xs text-muted-foreground">{u.p.bio}</p>
