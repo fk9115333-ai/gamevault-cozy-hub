@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Heart, Star } from "lucide-react";
 import type { GameEntry } from "@/lib/store";
 import { useStore } from "@/lib/store";
+import { buzz } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
 export function GameCard({ entry, index = 0 }: { entry: GameEntry; index?: number }) {
@@ -28,6 +29,11 @@ export function GameCard({ entry, index = 0 }: { entry: GameEntry; index?: numbe
             <div className="size-full bg-secondary" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
+          {entry.coop && (
+            <span className="absolute right-3 top-3 rounded-full bg-background/75 px-2 py-1 text-[11px] font-bold backdrop-blur">
+              🎮🎮 سوا
+            </span>
+          )}
           {entry.progress > 0 && entry.progress < 100 && (
             <div className="absolute inset-x-3 bottom-3 h-1.5 overflow-hidden rounded-full bg-background/60">
               <div
@@ -53,7 +59,10 @@ export function GameCard({ entry, index = 0 }: { entry: GameEntry; index?: numbe
         </div>
       </Link>
       <button
-        onClick={() => toggleFavorite(entry.id)}
+        onClick={() => {
+          buzz(20);
+          toggleFavorite(entry.id);
+        }}
         aria-label="مفضلة"
         className="absolute left-3 top-3 grid size-9 place-items-center rounded-full bg-background/70 backdrop-blur transition-colors hover:bg-background"
       >
