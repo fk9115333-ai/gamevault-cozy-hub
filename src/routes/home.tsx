@@ -211,7 +211,7 @@ function Dashboard() {
               <p className="text-xs text-muted-foreground">ما فيه لعبة قيد اللعب</p>
               <h2 className="font-display text-2xl font-black md:text-3xl">ابدأ رحلتك الجديدة اليوم</h2>
               <p className="text-xs text-muted-foreground">{quote}</p>
-              <Link to="/upcoming" className="w-fit">
+              <Link to="/upcoming" search={{ tab: "toBeat" }} className="w-fit">
                 <Button className="h-12 w-fit rounded-2xl border border-yellow-300/70 bg-primary px-6 font-display text-base font-black text-primary-foreground shadow-[0_0_30px_-6px_rgba(234,179,8,0.85)] transition-transform hover:scale-[1.03] hover:bg-primary/90 active:scale-[0.97]">
                   <Plus className="size-4" /> اختر لعبة من الخطة
                 </Button>
@@ -225,22 +225,35 @@ function Dashboard() {
       <CelebrationModal game={reviewed} review onClose={() => setReviewed(null)} />
 
       {!!trending.length && (
-        <Rail title="الأكثر رواجاً" subtitle="مقترحات من قائمتك — أضفها لقيد اللعب">
-          {trending.map((e, i) => (
+        <Rail
+          title="الأكثر رواجاً"
+          subtitle={
+            topGenres.length ? "مقترحات تناسب أنواع ألعابك المختومة" : "أفضل الألعاب تقييمًا"
+          }
+        >
+          {trending.map((g, i) => (
             <PosterCard
-              key={e.id}
-              entry={e}
+              key={g.id}
+              entry={
+                {
+                  id: g.id,
+                  name: g.name,
+                  image: g.background_image,
+                  genres: (g.genres ?? []).map((x) => x.name),
+                } as unknown as GameEntry
+              }
               index={i}
-              quickLabel="ابدأ اللعب"
+              quickLabel="أضفها للخطة"
               onQuick={() => {
                 buzz(40);
-                updateGame(e.id, { status: "current" });
-                toast.success(`«${e.name}» صارت قيد اللعب`);
+                addGame(g, "backlog");
+                toast.success(`«${g.name}» أُضيفت إلى الخطة`);
               }}
             />
           ))}
         </Rail>
       )}
+
 
       {/* B — تحدي الأسبوع */}
       <section>
