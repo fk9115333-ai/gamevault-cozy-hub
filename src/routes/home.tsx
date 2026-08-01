@@ -67,10 +67,30 @@ function Dashboard() {
 
   const hero = data.entries.find((e) => e.status === "current") ?? null;
   const [reviewed, setReviewed] = useState<GameEntry | null>(null);
+
+  /** أنواع الألعاب المكتملة — أساس التوصيات */
+  const topGenres = useMemo(() => {
+    const count = new Map<string, number>();
+    for (const e of data.entries.filter((x) => x.status === "completed"))
+      for (const g of e.genres) count.set(g, (count.get(g) ?? 0) + 1);
+    return [...count.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([g]) => g.toLowerCase().replace(/\s+/g, "-"));
+  }, [data.entries]);
+
+  const { data: recommended = [] } = useQuery({
+    queryKey: ["recommended", topGenres],
+    queryFn: () => getRecommended(topGenres),
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const owned = useMemo(() => new Set(data.entries.map((e) => e.id)), [data.entries]);
   const trending = useMemo(
-    () => data.entries.filter((e) => e.status === "backlog" || e.status === "hype").slice(0, 14),
-    [data.entries],
+    () => recommended.filter((g) => !owned.has(g.id)).slice(0, 14),
+    [recommended, owned],
   );
+
   const gotm = gameOfMonth(data.entries);
   const memories = memoryBox(data.entries);
   const stats = computeStats(data.entries);
