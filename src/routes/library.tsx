@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useCurrentData, type GameEntry, type Status } from "@/lib/store";
-import { GameCard } from "@/components/GameCard";
+
 import { GameEditDialog } from "@/components/GameEditDialog";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { EmptyState, SectionTitle } from "@/components/ui-bits";
