@@ -171,6 +171,13 @@ export const statusLabel: Record<Status, string> = {
   hype: "المرتقبة",
 };
 
+/** توافق مع البيانات القديمة: حالة «التالي» أصبحت «الانتظار» */
+export const normalizeStatus = (s: string): Status =>
+  s === "next" ? "backlog" : (s as Status);
+
+const normalizeEntries = (entries: GameEntry[]): GameEntry[] =>
+  entries.map((e) => (e.status === ("next" as unknown as Status) ? { ...e, status: "backlog" as Status } : e));
+
 export const otherUser = (u: UserId): UserId => (u === "faisal" ? "mishal" : "faisal");
 
 /** يضبط تواريخ البدء/الختم تلقائيًا حسب تغيّر الحالة */
@@ -398,13 +405,13 @@ export const useStore = create<State>()(
               faisal: {
                 ...s.users.faisal,
                 profile: { ...s.users.faisal.profile, ...snap.profiles.faisal },
-                entries: snap.entries.faisal,
+                entries: normalizeEntries(snap.entries.faisal),
                 activities: snap.activities.faisal,
               },
               mishal: {
                 ...s.users.mishal,
                 profile: { ...s.users.mishal.profile, ...snap.profiles.mishal },
-                entries: snap.entries.mishal,
+                entries: normalizeEntries(snap.entries.mishal),
                 activities: snap.activities.mishal,
               },
             },
@@ -414,6 +421,16 @@ export const useStore = create<State>()(
     },
     {
       name: "gamehub-store-v3",
+      version: 2,
+      migrate: (state) => {
+        const s = state as State | undefined;
+        if (s?.users) {
+          (["faisal", "mishal"] as UserId[]).forEach((u) => {
+            s.users[u] = { ...s.users[u], entries: normalizeEntries(s.users[u].entries ?? []) };
+          });
+        }
+        return s as State;
+      },
       partialize: (s) => ({ currentUser: s.currentUser, users: s.users }) as unknown as State,
     },
   ),
