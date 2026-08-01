@@ -158,6 +158,15 @@ function Dashboard() {
   const [quoteIdx, setQuoteIdx] = useState(0);
   useEffect(() => setQuoteIdx(new Date().getDate() % QUOTES.length), []);
   const quote = QUOTES[quoteIdx]!;
+  /** بانر سينمائي: صورة اللعبة الحالية، وإلا كولاج من المقترحات، وإلا صورة احتياطية */
+  const bannerImages = useMemo(() => {
+    if (hero?.image) return [hero.image];
+    const pool = [
+      ...data.entries.map((e) => e.image),
+      ...trending.map((g) => g.background_image),
+    ].filter((x): x is string => !!x);
+    return pool.slice(0, 3).length === 3 ? pool.slice(0, 3) : pool.slice(0, 1);
+  }, [hero, data.entries, trending]);
   const quick = [
     { icon: Trophy, label: "مكتملة", value: num(stats.completed) },
     { icon: Zap, label: "المستوى", value: num(level) },
