@@ -9,12 +9,25 @@ import {
   pushEntry,
   pushProfile,
   subscribeToCloud,
+  wipeUser,
 } from "./sync";
 
 export type UserId = "faisal" | "mishal";
 /** الحالات: مكتملة، قيد اللعب، الانتظار (ناوي أختمها)، المرتقبة (ألعاب لم تصدر) */
 export type Status = "current" | "completed" | "backlog" | "hype";
 export type Priority = "high" | "medium" | "low";
+/** مستوى صعوبة اللعبة المكتملة (يؤثر على نقاط الخبرة) */
+export type Difficulty = "easy" | "normal" | "hard" | "extreme";
+
+export const DIFFICULTIES: { v: Difficulty; l: string; mult: number }[] = [
+  { v: "easy", l: "سهلة", mult: 0.75 },
+  { v: "normal", l: "عادية", mult: 1 },
+  { v: "hard", l: "صعبة", mult: 1.5 },
+  { v: "extreme", l: "Souls-like", mult: 2.25 },
+];
+
+export const difficultyLabel = (d: Difficulty) =>
+  DIFFICULTIES.find((x) => x.v === d)?.l ?? "عادية";
 
 export type PlaySession = {
   id: string;
@@ -55,6 +68,9 @@ export type GameEntry = {
   priority: Priority;
   coop: boolean;
   fullCompletion: boolean;
+  /** ختمها قديمًا — تُحتسب في العدد فقط ولا تدخل المعدلات والخرائط */
+  legacy: boolean;
+  difficulty: Difficulty;
   startedAt: string | null;
   completedAt: string | null;
   addedAt: string;
@@ -109,6 +125,8 @@ type State = {
   addGoal: (g: Omit<Goal, "id">) => void;
   removeGoal: (id: string) => void;
   importData: (raw: string) => boolean;
+  /** تصفير شامل: يمسح ألعاب ونشاطات المستخدم الحالي من الجهاز والسحابة */
+  resetAll: () => Promise<void>;
   hydrateFromCloud: () => Promise<void>;
 };
 
@@ -159,6 +177,8 @@ export const entryFromRawg = (g: RawgGame, status: Status): GameEntry => ({
   priority: "medium",
   coop: false,
   fullCompletion: false,
+  legacy: false,
+  difficulty: "normal",
   startedAt: status === "current" ? new Date().toISOString() : null,
   completedAt: status === "completed" ? new Date().toISOString() : null,
   addedAt: new Date().toISOString(),
@@ -379,6 +399,21 @@ export const useStore = create<State>()(
           }),
         addGoal: (g) => mutate((u) => ({ ...u, goals: [...u.goals, { ...g, id: crypto.randomUUID() }] })),
         removeGoal: (id) => mutate((u) => ({ ...u, goals: u.goals.filter((g) => g.id !== id) })),
+        resetAll: async () => {
+          const uid = get().currentUser;
+          await wipeUser(uid);
+          set((s) => ({
+            users: {
+              ...s.users,
+              [uid]: {
+                ...s.users[uid],
+                entries: [],
+                activities: [],
+                goals: s.users[uid].goals.map((g) => ({ ...g, current: 0 })),
+              },
+            },
+          }));
+        },
         importData: (raw) => {
           try {
             const parsed = JSON.parse(raw) as { users: State["users"] };

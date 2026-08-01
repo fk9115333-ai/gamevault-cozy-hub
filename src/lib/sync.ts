@@ -34,6 +34,8 @@ export const entryToRow = (userId: UserId, e: GameEntry) => ({
   priority: e.priority,
   coop: e.coop,
   full_completion: e.fullCompletion,
+  legacy: e.legacy,
+  difficulty: e.difficulty,
   started_at: e.startedAt,
   completed_at: e.completedAt,
   added_at: e.addedAt,
@@ -74,6 +76,8 @@ export const rowToEntry = (r: Row): GameEntry => ({
   priority: (r["priority"] as GameEntry["priority"]) ?? "medium",
   coop: Boolean(r["coop"]),
   fullCompletion: Boolean(r["full_completion"]),
+  legacy: Boolean(r["legacy"]),
+  difficulty: ((r["difficulty"] as GameEntry["difficulty"]) ?? "normal"),
   startedAt: (r["started_at"] as string | null) ?? null,
   completedAt: (r["completed_at"] as string | null) ?? null,
   addedAt: String(r["added_at"] ?? new Date().toISOString()),
@@ -111,6 +115,14 @@ export const deleteEntry = (userId: UserId, gameId: number) => {
     .eq("user_id", userId)
     .eq("game_id", gameId)
     .then(warn("delete entry"));
+};
+
+export const wipeUser = async (userId: UserId) => {
+  const [g, a] = await Promise.all([
+    supabase.from("game_entries").delete().eq("user_id", userId),
+    supabase.from("activities").delete().eq("user_id", userId),
+  ]);
+  if (g.error || a.error) console.warn("[sync] wipe", g.error ?? a.error);
 };
 
 export const pushActivity = (userId: UserId, a: Activity) => {
