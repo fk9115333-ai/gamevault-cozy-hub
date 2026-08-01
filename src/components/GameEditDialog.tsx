@@ -47,7 +47,15 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
 /** أزرار جلسات سريعة — بدون حقول يدوية */
 const QUICK = [30, 60, 120, 180];
 
-export function SessionBox({ entryId, onDone }: { entryId: number; onDone?: () => void }) {
+export function SessionBox({
+  entryId,
+  onDone,
+  onComplete,
+}: {
+  entryId: number;
+  onDone?: () => void;
+  onComplete?: () => void;
+}) {
   const addSession = useStore((s) => s.addSession);
 
   const log = (minutes: number) => {
@@ -80,6 +88,18 @@ export function SessionBox({ entryId, onDone }: { entryId: number; onDone?: () =
           </button>
         ))}
       </div>
+      {onComplete && (
+        <button
+          type="button"
+          onClick={() => {
+            buzz([40, 60, 40]);
+            onComplete();
+          }}
+          className="h-14 w-full rounded-2xl border-2 border-yellow-500/70 bg-transparent font-display text-base font-black text-primary shadow-[0_0_30px_-14px_rgba(234,179,8,0.9)] transition-all hover:bg-primary hover:text-primary-foreground active:scale-95"
+        >
+          تم الختم 🏆
+        </button>
+      )}
     </div>
   );
 }
@@ -87,18 +107,29 @@ export function SessionBox({ entryId, onDone }: { entryId: number; onDone?: () =
 /** ورقة سفلية لتسجيل جلسة سريعة من الرئيسية */
 export function LogSessionSheet({ entry, trigger }: { entry: GameEntry; trigger: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [edit, setEdit] = useState(false);
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>{trigger}</SheetTrigger>
-      <SheetContent side="bottom" dir="rtl" className="rounded-t-3xl pb-10">
-        <SheetHeader>
-          <SheetTitle className="text-right font-display">تسجيل جلسة — {entry.name}</SheetTitle>
-        </SheetHeader>
-        <div className="p-4">
-          <SessionBox entryId={entry.id} onDone={() => setOpen(false)} />
-        </div>
-      </SheetContent>
-    </Sheet>
+    <>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>{trigger}</SheetTrigger>
+        <SheetContent side="bottom" dir="rtl" className="rounded-t-3xl pb-10">
+          <SheetHeader>
+            <SheetTitle className="text-right font-display">تسجيل جلسة — {entry.name}</SheetTitle>
+          </SheetHeader>
+          <div className="p-4">
+            <SessionBox
+              entryId={entry.id}
+              onDone={() => setOpen(false)}
+              onComplete={() => {
+                setOpen(false);
+                setEdit(true);
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+      <GameEditDialog entry={entry} open={edit} onOpenChange={setEdit} initialStatus="completed" />
+    </>
   );
 }
 
