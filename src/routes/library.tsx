@@ -100,8 +100,9 @@ function LibraryPage() {
 
   const list = useMemo(() => {
     let out = data.entries.filter((e) =>
-      tab === "all" ? e.status === "current" || e.status === "completed" : e.status === tab,
+      tab === "all" ? e.status !== "completed" : e.status === tab,
     );
+
     if (q.trim()) out = out.filter((e) => e.name.toLowerCase().includes(q.toLowerCase()));
     return [...out].sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name);
