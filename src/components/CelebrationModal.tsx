@@ -14,12 +14,12 @@ export function CompletionCard({ game }: { game: GameEntry }) {
 
   const cells = [
     { icon: Clock, label: "إجمالي اللعب", value: `${num(s.hours, 1)} ساعة` },
-    { icon: CalendarRange, label: "المدة المستغرقة", value: s.days ? `${num(s.days)} يوم` : "—" },
-    { icon: Gauge, label: "المعدل اليومي", value: s.dailyAvg ? `${num(s.dailyAvg, 1)} ساعة` : "—" },
+    { icon: CalendarRange, label: "المدة المستغرقة", value: `${num(s.days ?? 1)} يوم` },
+    { icon: Gauge, label: "المعدل اليومي", value: `${num(s.dailyAvg ?? 0, 1)} ساعة` },
     {
       icon: Trophy,
       label: "التقييم",
-      value: game.personalRating ? `${num(game.personalRating, 1)}/10` : "بدون",
+      value: game.personalRating ? `${num(game.personalRating, 1)}/10` : "قيد التقييم",
     },
   ];
 
@@ -36,7 +36,7 @@ export function CompletionCard({ game }: { game: GameEntry }) {
       </div>
 
       <div className="rounded-2xl bg-secondary/40 px-4 py-3 text-center text-xs text-muted-foreground">
-        من {dayMonth(s.startedAt)} إلى {dayMonth(s.completedAt)}
+        من {dayMonth(s.startedAt, "بداية غير مسجّلة")} إلى {dayMonth(s.completedAt, "اليوم")}
         {s.sessions > 0 ? ` · ${num(s.sessions)} جلسة` : ""}
       </div>
 
@@ -53,9 +53,12 @@ export function CompletionCard({ game }: { game: GameEntry }) {
 export function CelebrationModal({
   game,
   onClose,
+  review = false,
 }: {
   game: GameEntry | null;
   onClose: () => void;
+  /** عرض البطاقة لاحقًا من المكتبة بدون قصاصات الاحتفال */
+  review?: boolean;
 }) {
   const data = useCurrentData();
   if (!game) return null;
@@ -67,16 +70,19 @@ export function CelebrationModal({
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent dir="rtl" className="overflow-hidden sm:max-w-md">
-        <Confetti run />
+        {!review && <Confetti run />}
         <div className="space-y-4 text-center">
-          <div className="text-5xl">🎉</div>
-          <h2 className="font-display text-2xl font-black">مبروك! ختمت «{game.name}»</h2>
+          <div className="text-5xl">{review ? "🏅" : "🎉"}</div>
+          <h2 className="font-display text-2xl font-black leading-snug">
+            {review ? "رحلتك مع " : "مبروك! ختمت "}
+            <bdi className="inline-block">{game.name}</bdi>
+          </h2>
 
           <CompletionCard game={game} />
 
           <ul className="space-y-2 text-xs text-muted-foreground">
             <li className="rounded-2xl bg-secondary/50 px-4 py-2.5">
-              أصبحت اللعبة رقم {num(order)} في مكتبتك
+              اللعبة رقم {num(order)} في مكتبتك
             </li>
             {timeline && (
               <li className="rounded-2xl bg-secondary/50 px-4 py-2.5">
@@ -89,7 +95,7 @@ export function CelebrationModal({
           </ul>
 
           <Button className="w-full" onClick={onClose}>
-            تمام 🔥
+            {review ? "إغلاق" : "تمام 🔥"}
           </Button>
         </div>
       </DialogContent>
