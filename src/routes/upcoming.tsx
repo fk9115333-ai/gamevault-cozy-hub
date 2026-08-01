@@ -11,6 +11,9 @@ import { motion } from "motion/react";
 import { Trash2, ChevronDown, ChevronUp, GripVertical, Star } from "lucide-react";
 
 export const Route = createFileRoute("/upcoming")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: search.tab === "toBeat" ? ("toBeat" as const) : ("releases" as const),
+  }),
   head: () => ({
     meta: [
       { title: "الخطة — GameHub" },
@@ -33,11 +36,13 @@ const topTabs = [
 ] as const;
 
 function PlanPage() {
+  const { tab: initialTab } = Route.useSearch();
   const data = useCurrentData();
   const removeGame = useStore((s) => s.removeGame);
   const reorderQueue = useStore((s) => s.reorderQueue);
-  const [tab, setTab] = useState<(typeof topTabs)[number]["v"]>("releases");
+  const [tab, setTab] = useState<(typeof topTabs)[number]["v"]>(initialTab);
   const [dragId, setDragId] = useState<number | null>(null);
+
 
   const releases = [...data.entries]
     .filter((e) => e.status === "hype")
