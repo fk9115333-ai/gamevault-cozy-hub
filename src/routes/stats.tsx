@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCurrentData } from "@/lib/store";
+import { useStore, useCurrentData } from "@/lib/store";
 import { computeStats } from "@/lib/stats";
 import { SectionTitle, StatCard } from "@/components/ui-bits";
 import { num } from "@/lib/dates";
 import {
   Area,
   AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -18,9 +21,9 @@ export const Route = createFileRoute("/stats")({
   head: () => ({
     meta: [
       { title: "الإحصائيات — GameHub" },
-      { name: "description", content: "أرقام نظيفة: متوسط اللعب اليومي ومعدل التختيم الشهري." },
+      { name: "description", content: "أرقام نظيفة: متوسط اللعب اليومي، معدل التختيم الشهري، ومقارنة بين فيصل ومشعل." },
       { property: "og:title", content: "الإحصائيات — GameHub" },
-      { property: "og:description", content: "تحليلات مبسّطة لحياتك في الألعاب." },
+      { property: "og:description", content: "تحليلات مبسّطة لحياتك في الألعاب مع مقارنة مباشرة." },
     ],
   }),
   component: StatsPage,
@@ -28,7 +31,22 @@ export const Route = createFileRoute("/stats")({
 
 function StatsPage() {
   const data = useCurrentData();
-  const s = computeStats(data.entries);
+  const users = useStore((s) => s.users);
+  const s = computeStats(data.entries, data.profile.gamingStartDate);
+
+  const a = computeStats(users.faisal.entries, users.faisal.profile.gamingStartDate);
+  const b = computeStats(users.mishal.entries, users.mishal.profile.gamingStartDate);
+
+  const chart = [
+    { name: "المكتملة", فيصل: a.completed, مشعل: b.completed },
+    { name: "ساعات اللعب", فيصل: Number(a.hours.toFixed(1)), مشعل: Number(b.hours.toFixed(1)) },
+    { name: "حجم المكتبة", فيصل: a.total, مشعل: b.total },
+    {
+      name: "نسبة الإكمال",
+      فيصل: Number(a.completionRate.toFixed(1)),
+      مشعل: Number(b.completionRate.toFixed(1)),
+    },
+  ];
 
   return (
     <div className="space-y-8">
@@ -50,6 +68,13 @@ function StatsPage() {
           index={3}
         />
       </div>
+
+      {data.profile.gamingStartDate && (
+        <p className="-mt-4 text-[11px] text-muted-foreground">
+          المتوسطات محسوبة من بداية رحلتك في {data.profile.gamingStartDate}
+          {s.legacy > 0 && ` · ${num(s.legacy)} لعبة قديمة مستثناة من الرسوم الزمنية`}
+        </p>
+      )}
 
       <div className="rounded-3xl border border-border bg-card p-4">
         <h3 className="mb-3 font-display text-sm font-bold">الألعاب المكتملة شهريًا</h3>
@@ -89,6 +114,56 @@ function StatsPage() {
         />
         <InfoTile label="أنشط شهر" value={s.mostActiveMonth} />
       </div>
+
+      <section className="space-y-4 border-t border-border pt-8">
+        <SectionTitle title="المقارنة" subtitle="فيصل ضد مشعل — مباشرة من السحابة" />
+
+        <div className="grid gap-3 md:grid-cols-2">
+          {[
+            { p: users.faisal.profile, st: a },
+            { p: users.mishal.profile, st: b },
+          ].map((u) => (
+            <div key={u.p.name} className="rounded-3xl border border-border bg-card p-5">
+              <div className="flex items-center gap-3">
+                <span className="grid size-12 place-items-center rounded-2xl bg-secondary text-2xl">
+                  {u.p.avatar}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="font-display text-lg font-extrabold">{u.p.name}</h3>
+                  <p className="truncate text-xs text-muted-foreground">{u.p.bio}</p>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                <Cell label="مكتملة" value={num(u.st.completed)} />
+                <Cell label="ساعات" value={num(u.st.hours, 1)} />
+                <Cell label="لعبناها سوا" value={num(u.st.coop)} />
+                <Cell label="نسبة الإكمال" value={`${num(u.st.completionRate)}%`} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-3xl border border-border bg-card p-4">
+          <h3 className="mb-3 font-display text-sm font-bold">مقارنة الأرقام</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chart}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={10} />
+              <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--color-popover)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 12,
+                }}
+              />
+              <Legend />
+              <Bar dataKey="فيصل" fill="var(--color-chart-1)" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="مشعل" fill="var(--color-chart-2)" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
     </div>
   );
 }
@@ -98,6 +173,15 @@ function InfoTile({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-border bg-card p-4">
       <p className="text-[11px] text-muted-foreground">{label}</p>
       <p className="mt-1 truncate font-display font-bold">{value}</p>
+    </div>
+  );
+}
+
+function Cell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-secondary/50 p-3">
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="truncate font-bold">{value}</p>
     </div>
   );
 }
