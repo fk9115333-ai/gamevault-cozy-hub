@@ -46,7 +46,7 @@ export function WelcomeDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent dir="rtl" className="sm:max-w-md" showCloseButton={false}>
+      <DialogContent dir="rtl" className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-right font-display text-xl">
             أهلاً {name} 👋
