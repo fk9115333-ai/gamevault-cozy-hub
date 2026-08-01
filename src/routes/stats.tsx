@@ -32,10 +32,10 @@ export const Route = createFileRoute("/stats")({
 function StatsPage() {
   const data = useCurrentData();
   const users = useStore((s) => s.users);
-  const s = computeStats(data.entries, data.profile.gamingStartDate);
+  const s = computeStats(data.entries);
 
-  const a = computeStats(users.faisal.entries, users.faisal.profile.gamingStartDate);
-  const b = computeStats(users.mishal.entries, users.mishal.profile.gamingStartDate);
+  const a = computeStats(users.faisal.entries);
+  const b = computeStats(users.mishal.entries);
 
   const chart = [
     { name: "المكتملة", فيصل: a.completed, مشعل: b.completed },
@@ -69,12 +69,6 @@ function StatsPage() {
         />
       </div>
 
-      {data.profile.gamingStartDate && (
-        <p className="-mt-4 text-[11px] text-muted-foreground">
-          المتوسطات محسوبة من بداية رحلتك في {data.profile.gamingStartDate}
-          {s.legacy > 0 && ` · ${num(s.legacy)} لعبة قديمة مستثناة من الرسوم الزمنية`}
-        </p>
-      )}
 
       <div className="rounded-3xl border border-border bg-card p-4">
         <h3 className="mb-3 font-display text-sm font-bold">الألعاب المكتملة شهريًا</h3>

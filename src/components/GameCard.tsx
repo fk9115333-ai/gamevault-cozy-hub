@@ -1,13 +1,23 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { Heart, Star } from "lucide-react";
+import { GripVertical, Heart, Star } from "lucide-react";
 import type { GameEntry } from "@/lib/store";
 import { useStore } from "@/lib/store";
 import { buzz } from "@/lib/haptics";
+import { daysBetween } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
-export function GameCard({ entry, index = 0 }: { entry: GameEntry; index?: number }) {
+export function GameCard({
+  entry,
+  index = 0,
+  draggable = false,
+}: {
+  entry: GameEntry;
+  index?: number;
+  draggable?: boolean;
+}) {
   const toggleFavorite = useStore((s) => s.toggleFavorite);
+  const days = entry.status === "completed" ? daysBetween(entry.startedAt, entry.completedAt) : null;
 
   return (
     <motion.div
@@ -16,7 +26,13 @@ export function GameCard({ entry, index = 0 }: { entry: GameEntry; index?: numbe
       transition={{ delay: Math.min(index * 0.04, 0.4), duration: 0.4 }}
       className="group relative overflow-hidden rounded-3xl border border-border bg-card surface-hover"
     >
+      {draggable && (
+        <span className="absolute right-3 top-3 z-10 grid size-8 cursor-grab place-items-center rounded-full bg-background/80 backdrop-blur">
+          <GripVertical className="size-4 text-muted-foreground" />
+        </span>
+      )}
       <Link to="/game/$id" params={{ id: String(entry.id) }} className="block">
+
         <div className="relative aspect-[16/10] overflow-hidden">
           {entry.image ? (
             <img
@@ -54,7 +70,9 @@ export function GameCard({ entry, index = 0 }: { entry: GameEntry; index?: numbe
               {entry.personalRating || entry.rating || "—"}
             </span>
             {entry.hours > 0 && <span>{entry.hours} ساعة</span>}
+            {days !== null && <span>استغرقت {days} يوم</span>}
             {entry.metacritic && <span>MC {entry.metacritic}</span>}
+
           </div>
         </div>
       </Link>

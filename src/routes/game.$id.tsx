@@ -28,10 +28,11 @@ export const Route = createFileRoute("/game/$id")({
 const addOptions: { v: Status; l: string }[] = [
   { v: "current", l: "قيد اللعب" },
   { v: "completed", l: "مكتملة" },
+  { v: "next", l: "التالي" },
   { v: "backlog", l: "الانتظار" },
-  { v: "wishlist", l: "الرغبات" },
   { v: "hype", l: "المرتقبة" },
 ];
+
 
 function GamePage() {
   const { id } = Route.useParams();
@@ -135,7 +136,7 @@ function GamePage() {
             </div>
           )}
           <div className="mt-5 flex flex-wrap gap-2">
-            {addOptions.map((o) => (
+            {(upcoming ? addOptions.filter((o) => o.v === "hype") : addOptions.filter((o) => o.v !== "hype")).map((o) => (
               <Button
                 key={o.v}
                 size="sm"

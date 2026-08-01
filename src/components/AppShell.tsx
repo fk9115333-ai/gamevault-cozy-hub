@@ -7,17 +7,20 @@ import {
   BarChart3,
   Settings2,
   Sparkles,
+  Activity as ActivityIcon,
+  Crown,
+  PartyPopper,
 } from "lucide-react";
-import { useStore } from "@/lib/store";
+import { useCurrentData, useStore } from "@/lib/store";
+import { computeLevel } from "@/lib/stats";
 import { cn } from "@/lib/utils";
 import { SmartSearch } from "./SmartSearch";
 import { UserSwitcher } from "./UserSwitcher";
-import { WelcomeDialog } from "./WelcomeDialog";
 import type { ReactNode } from "react";
 
 /** التنقل السفلي: 4 تبويبات فقط */
 const mainNav = [
-  { to: "/", label: "الرئيسية", icon: LayoutDashboard },
+  { to: "/home", label: "الرئيسية", icon: LayoutDashboard },
   { to: "/library", label: "المكتبة", icon: Library },
   { to: "/upcoming", label: "المرتقبة", icon: CalendarClock },
   { to: "/stats", label: "الإحصائيات", icon: BarChart3 },
@@ -25,29 +28,52 @@ const mainNav = [
 
 const nav = [
   ...mainNav,
+  { to: "/timeline", label: "الخط الزمني", icon: ActivityIcon },
+  { to: "/hall", label: "قاعة المشاهير", icon: Crown },
+  { to: "/wrap", label: "ملخص السنة", icon: PartyPopper },
   { to: "/profile", label: "الملف الشخصي", icon: Sparkles },
   { to: "/settings", label: "الإعدادات", icon: Settings2 },
 ] as const;
 
+function LevelBar() {
+  const data = useCurrentData();
+  const { level, pct } = computeLevel(data.entries);
+  return (
+    <div className="flex items-center gap-2">
+      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--gradient-primary)] text-[11px] font-black text-primary-foreground">
+        {level}
+      </span>
+      <div className="hidden w-24 sm:block">
+        <div className="mb-1 text-[10px] text-muted-foreground">المستوى {level}</div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+          <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const user = useStore((s) => s.currentUser);
+  const profile = useCurrentData().profile;
+
+  // شاشة اختيار الملف الشخصي تُعرض بلا هيكل
+  if (pathname === "/") return <div dir="rtl">{children}</div>;
 
   return (
     <div dir="rtl" className="min-h-screen">
-      <WelcomeDialog />
       <div className="mx-auto flex w-full max-w-[1600px] gap-6 px-3 pb-28 pt-4 md:px-6 lg:pb-8">
         <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-64 shrink-0 flex-col rounded-3xl glass p-4 lg:flex">
-          <Link to="/" className="mb-6 flex items-center gap-3 px-2">
-            <span className="grid size-10 place-items-center rounded-2xl bg-[var(--gradient-primary)] text-lg font-bold text-primary-foreground">
-              G
+          <Link to="/home" className="mb-6 flex items-center gap-3 px-2">
+            <span className="grid size-10 place-items-center rounded-2xl bg-[var(--gradient-primary)] text-lg">
+              {profile.avatar}
             </span>
-            <span className="font-display text-xl font-extrabold gradient-text">GameHub</span>
+            <span className="font-display text-lg font-extrabold">مرحباً {profile.name}</span>
           </Link>
-          <nav className="flex flex-1 flex-col gap-1">
+          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
             {nav.map((item) => {
-              const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+              const active = pathname.startsWith(item.to);
               return (
                 <Link
                   key={item.to}
@@ -76,16 +102,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="min-w-0 flex-1">
           <header className="mb-5 flex items-center gap-3">
             <Link to="/" className="lg:hidden">
-              <span className="grid size-10 place-items-center rounded-2xl bg-[var(--gradient-primary)] font-bold text-primary-foreground">
-                G
+              <span className="grid size-10 place-items-center rounded-2xl bg-secondary text-lg">
+                {profile.avatar}
               </span>
             </Link>
             <div className="min-w-0 flex-1">
               <SmartSearch />
             </div>
-            <div className="hidden md:block lg:hidden">
-              <UserSwitcher compact />
-            </div>
+            <LevelBar />
           </header>
           <motion.div
             key={pathname + user}
@@ -100,7 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-1 glass px-2 py-2 lg:hidden">
         {mainNav.map((item) => {
-          const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+          const active = pathname.startsWith(item.to);
           return (
             <Link
               key={item.to}
