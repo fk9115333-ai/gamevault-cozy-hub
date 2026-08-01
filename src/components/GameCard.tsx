@@ -70,7 +70,9 @@ export function GameCard({
               {entry.personalRating || entry.rating || "—"}
             </span>
             {entry.hours > 0 && <span>{entry.hours} ساعة</span>}
+            {days !== null && <span>استغرقت {days} يوم</span>}
             {entry.metacritic && <span>MC {entry.metacritic}</span>}
+
           </div>
         </div>
       </Link>
