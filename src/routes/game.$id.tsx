@@ -28,10 +28,11 @@ export const Route = createFileRoute("/game/$id")({
 const addOptions: { v: Status; l: string }[] = [
   { v: "current", l: "قيد اللعب" },
   { v: "completed", l: "مكتملة" },
+  { v: "next", l: "التالي" },
   { v: "backlog", l: "الانتظار" },
-  { v: "wishlist", l: "الرغبات" },
   { v: "hype", l: "المرتقبة" },
 ];
+
 
 function GamePage() {
   const { id } = Route.useParams();
