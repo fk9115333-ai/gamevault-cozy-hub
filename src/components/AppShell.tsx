@@ -7,7 +7,6 @@ import {
   BarChart3,
   Trophy,
   Users,
-  Layers,
   Settings2,
   Sparkles,
 } from "lucide-react";
@@ -20,8 +19,7 @@ import type { ReactNode } from "react";
 const nav = [
   { to: "/", label: "الرئيسية", icon: LayoutDashboard },
   { to: "/library", label: "المكتبة", icon: Library },
-  { to: "/upcoming", label: "القادمة", icon: CalendarClock },
-  { to: "/collections", label: "المجموعات", icon: Layers },
+  { to: "/upcoming", label: "المرتقبة", icon: CalendarClock },
   { to: "/stats", label: "الإحصائيات", icon: BarChart3 },
   { to: "/achievements", label: "الإنجازات", icon: Trophy },
   { to: "/compare", label: "المقارنة", icon: Users },

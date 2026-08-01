@@ -4,22 +4,28 @@ import { useNavigate } from "@tanstack/react-router";
 import { Search, Plus, Loader2 } from "lucide-react";
 import { searchGames, type RawgGame } from "@/lib/rawg";
 import { useStore, type Status } from "@/lib/store";
+import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { GameEditDialog } from "@/components/GameEditDialog";
 
 const quickAdd: { status: Status; label: string }[] = [
   { status: "current", label: "قيد اللعب" },
   { status: "backlog", label: "الانتظار" },
-  { status: "wishlist", label: "الرغبات" },
+  { status: "hype", label: "المرتقبة" },
   { status: "completed", label: "مكتملة" },
 ];
 
 export function SmartSearch() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const addGame = useStore((s) => s.addGame);
+  const entry = useStore((s) =>
+    editId ? (s.users[s.currentUser].entries.find((e) => e.id === editId) ?? null) : null,
+  );
 
   const { data, isFetching } = useQuery({
     queryKey: ["search", q],
@@ -43,14 +49,23 @@ export function SmartSearch() {
   };
 
   const add = (g: RawgGame, status: Status) => {
+    buzz(status === "completed" ? [40, 60, 40] : 20);
     addGame(g, status);
-    toast.success(`أُضيفت ${g.name}`);
     setOpen(false);
     setQ("");
+    if (status === "completed") setEditId(g.id);
+    else toast.success(`أُضيفت ${g.name}`);
   };
 
   return (
     <div ref={boxRef} className="relative">
+      {entry && (
+        <GameEditDialog
+          entry={entry}
+          open={editId !== null}
+          onOpenChange={(o) => !o && setEditId(null)}
+        />
+      )}
       <div className="flex items-center gap-2 rounded-2xl glass px-4 py-2.5">
         <Search className="size-4 shrink-0 text-muted-foreground" />
         <input

@@ -77,21 +77,12 @@ function ProfilePage() {
                 onChange={(e) => updateProfile({ favoriteGame: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="mb-1 block text-xs">المنصة المفضلة</Label>
-                <Input
-                  value={data.profile.favoritePlatform}
-                  onChange={(e) => updateProfile({ favoritePlatform: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label className="mb-1 block text-xs">التصنيف المفضل</Label>
-                <Input
-                  value={data.profile.favoriteGenre}
-                  onChange={(e) => updateProfile({ favoriteGenre: e.target.value })}
-                />
-              </div>
+            <div>
+              <Label className="mb-1 block text-xs">التصنيف المفضل</Label>
+              <Input
+                value={data.profile.favoriteGenre}
+                onChange={(e) => updateProfile({ favoriteGenre: e.target.value })}
+              />
             </div>
           </div>
         </div>

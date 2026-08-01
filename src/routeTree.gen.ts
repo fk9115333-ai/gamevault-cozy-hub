@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AchievementsRouteImport } from './routes/achievements'
-import { Route as CollectionsRouteImport } from './routes/collections'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -28,11 +27,6 @@ const IndexRoute = IndexRouteImport.update({
 const AchievementsRoute = AchievementsRouteImport.update({
   id: '/achievements',
   path: '/achievements',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CollectionsRoute = CollectionsRouteImport.update({
-  id: '/collections',
-  path: '/collections',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompareRoute = CompareRouteImport.update({
@@ -74,7 +68,6 @@ const GameIdRoute = GameIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
-  '/collections': typeof CollectionsRoute
   '/compare': typeof CompareRoute
   '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
@@ -86,7 +79,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
-  '/collections': typeof CollectionsRoute
   '/compare': typeof CompareRoute
   '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
@@ -99,7 +91,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
-  '/collections': typeof CollectionsRoute
   '/compare': typeof CompareRoute
   '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
@@ -113,7 +104,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/achievements'
-    | '/collections'
     | '/compare'
     | '/library'
     | '/profile'
@@ -125,7 +115,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/achievements'
-    | '/collections'
     | '/compare'
     | '/library'
     | '/profile'
@@ -137,7 +126,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/achievements'
-    | '/collections'
     | '/compare'
     | '/library'
     | '/profile'
@@ -150,7 +138,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AchievementsRoute: typeof AchievementsRoute
-  CollectionsRoute: typeof CollectionsRoute
   CompareRoute: typeof CompareRoute
   LibraryRoute: typeof LibraryRoute
   ProfileRoute: typeof ProfileRoute
@@ -174,13 +161,6 @@ declare module '@tanstack/react-router' {
       path: '/achievements'
       fullPath: '/achievements'
       preLoaderRoute: typeof AchievementsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/collections': {
-      id: '/collections'
-      path: '/collections'
-      fullPath: '/collections'
-      preLoaderRoute: typeof CollectionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compare': {
@@ -238,7 +218,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AchievementsRoute: AchievementsRoute,
-  CollectionsRoute: CollectionsRoute,
   CompareRoute: CompareRoute,
   LibraryRoute: LibraryRoute,
   ProfileRoute: ProfileRoute,
