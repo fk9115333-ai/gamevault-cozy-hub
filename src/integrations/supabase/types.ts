@@ -45,6 +45,7 @@ export type Database = {
           completed_at: string | null
           coop: boolean
           developer: string | null
+          difficulty: string
           favorite: boolean
           favorite_order: number
           full_completion: boolean
@@ -82,6 +83,7 @@ export type Database = {
           completed_at?: string | null
           coop?: boolean
           developer?: string | null
+          difficulty?: string
           favorite?: boolean
           favorite_order?: number
           full_completion?: boolean
@@ -119,6 +121,7 @@ export type Database = {
           completed_at?: string | null
           coop?: boolean
           developer?: string | null
+          difficulty?: string
           favorite?: boolean
           favorite_order?: number
           full_completion?: boolean
