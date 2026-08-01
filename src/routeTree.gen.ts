@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HallRouteImport } from './routes/hall'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -22,6 +23,11 @@ import { Route as GameIdRouteImport } from './routes/game.$id'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HallRoute = HallRouteImport.update({
+  id: '/hall',
+  path: '/hall',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HomeRoute = HomeRouteImport.update({
@@ -67,6 +73,7 @@ const GameIdRoute = GameIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/hall': typeof HallRoute
   '/home': typeof HomeRoute
   '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/hall': typeof HallRoute
   '/home': typeof HomeRoute
   '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
@@ -90,6 +98,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/hall': typeof HallRoute
   '/home': typeof HomeRoute
   '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/hall'
     | '/home'
     | '/library'
     | '/profile'
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/hall'
     | '/home'
     | '/library'
     | '/profile'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/hall'
     | '/home'
     | '/library'
     | '/profile'
@@ -137,6 +149,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  HallRoute: typeof HallRoute
   HomeRoute: typeof HomeRoute
   LibraryRoute: typeof LibraryRoute
   ProfileRoute: typeof ProfileRoute
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hall': {
+      id: '/hall'
+      path: '/hall'
+      fullPath: '/hall'
+      preLoaderRoute: typeof HallRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/home': {
@@ -217,6 +237,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  HallRoute: HallRoute,
   HomeRoute: HomeRoute,
   LibraryRoute: LibraryRoute,
   ProfileRoute: ProfileRoute,
