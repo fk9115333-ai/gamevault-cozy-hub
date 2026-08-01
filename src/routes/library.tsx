@@ -93,6 +93,7 @@ function LibraryPage() {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<(typeof sorts)[number]["v"]>("added");
   const [celebrated, setCelebrated] = useState<GameEntry | null>(null);
+  const [reviewed, setReviewed] = useState<GameEntry | null>(null);
 
   const list = useMemo(() => {
     let out = data.entries.filter((e) => (tab === "all" ? true : e.status === tab));
