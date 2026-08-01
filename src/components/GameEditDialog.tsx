@@ -274,41 +274,6 @@ export function GameEditDialog({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2 rounded-2xl bg-secondary/50 px-4 py-3">
-                <div>
-                  <Label className="mb-1 block text-xs">تاريخ البدء</Label>
-                  <Input
-                    type="date"
-                    value={toDateInput(draft.startedAt)}
-                    max={new Date().toISOString().slice(0, 10)}
-                    onChange={(e) =>
-                      set("startedAt", e.target.value ? new Date(e.target.value).toISOString() : null)
-                    }
-                  />
-                </div>
-                <div>
-                  <Label className="mb-1 block text-xs">تاريخ الختم</Label>
-                  <Input
-                    type="date"
-                    value={toDateInput(draft.completedAt)}
-                    max={new Date().toISOString().slice(0, 10)}
-                    onChange={(e) =>
-                      set("completedAt", e.target.value ? new Date(e.target.value).toISOString() : null)
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between rounded-2xl bg-secondary/50 px-4 py-3">
-                <Label className="text-xs">👑 قاعة المشاهير</Label>
-                <Switch
-                  checked={draft.hallOfFame}
-                  onCheckedChange={(v) => {
-                    buzz(30);
-                    set("hallOfFame", v);
-                  }}
-                />
-              </div>
 
               <Textarea
                 placeholder="مراجعتك عن اللعبة"
