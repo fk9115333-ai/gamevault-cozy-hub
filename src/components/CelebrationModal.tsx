@@ -32,7 +32,7 @@ export function CelebrationModal({
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent dir="rtl" className="overflow-hidden sm:max-w-md">
-        <Confetti />
+        <Confetti run />
         <div className="space-y-4 text-center">
           <div className="text-5xl">🎉</div>
           <h2 className="font-display text-2xl font-black">مبروك! ختمت «{game.name}»</h2>
