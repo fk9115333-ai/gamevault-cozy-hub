@@ -116,8 +116,8 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     background-image:
-      radial-gradient(1000px 600px at 100% -10%, oklch(0.74 0.15 214 / 0.14), transparent 60%),
-      radial-gradient(800px 500px at 0% 0%, oklch(0.72 0.13 300 / 0.12), transparent 55%);
+      radial-gradient(1000px 600px at 100% -10%, oklch(0.82 0.15 86 / 0.12), transparent 60%),
+      radial-gradient(800px 500px at 0% 0%, oklch(0.66 0.15 45 / 0.1), transparent 55%);
     background-attachment: fixed;
   }
 
@@ -170,4 +170,19 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+@utility safe-bottom {
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@utility gold-glow {
+  color: var(--primary);
+  text-shadow: 0 0 14px oklch(0.82 0.15 86 / 0.6);
+  filter: drop-shadow(0 0 8px oklch(0.82 0.15 86 / 0.55));
+}
+
+@utility gold-ring {
+  border: 2px solid rgb(234 179 8);
+  box-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
 }
