@@ -136,7 +136,7 @@ function GamePage() {
             </div>
           )}
           <div className="mt-5 flex flex-wrap gap-2">
-            {addOptions.map((o) => (
+            {(upcoming ? addOptions.filter((o) => o.v === "hype") : addOptions.filter((o) => o.v !== "hype")).map((o) => (
               <Button
                 key={o.v}
                 size="sm"
