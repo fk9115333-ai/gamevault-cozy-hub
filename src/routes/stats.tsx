@@ -16,7 +16,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { CheckCircle2, Timer, CalendarDays, Sun } from "lucide-react";
+import { CheckCircle2, Timer, CalendarDays, Sun, Percent, Flame } from "lucide-react";
+import { difficultyLabel } from "@/lib/store";
 
 export const Route = createFileRoute("/stats")({
   head: () => ({
@@ -70,6 +71,21 @@ function StatsPage() {
         />
       </div>
 
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <StatCard
+          label="معدل الإنجاز"
+          value={`${num(s.completionRate, 1)}%`}
+          icon={Percent}
+          hint="نسبة الألعاب المختومة من مكتبتك"
+        />
+        <StatCard
+          label="أصعب لعبة ختمتها"
+          value={s.hardest ? `${s.hardest.name} · ${difficultyLabel(s.hardest.difficulty ?? "normal")}` : "—"}
+          icon={Flame}
+          index={1}
+          hint="حسب مستوى الصعوبة الذي سجّلته"
+        />
+      </div>
 
       <div className="rounded-3xl border border-border bg-card p-4">
         <h3 className="mb-3 font-display text-sm font-bold">الألعاب المكتملة شهريًا</h3>
