@@ -260,8 +260,8 @@ export const useStore = create<State>()(
         profileChosen: false,
         hydrated: false,
         users: {
-          faisal: emptyUser("فيصل", "🎮", "لاعب رعب ومحب لسلسلة Resident Evil."),
-          mishal: emptyUser("مشعل", "🕹️", "عاشق ألعاب القصة والعوالم المفتوحة."),
+          faisal: emptyUser("فيصل", "outlaw", "لاعب رعب ومحب لسلسلة Resident Evil."),
+          mishal: emptyUser("مشعل", "ninja", "عاشق ألعاب القصة والعوالم المفتوحة."),
         },
         setUser: (u) => set({ currentUser: u }),
         chooseProfile: (u) => set({ currentUser: u, profileChosen: true }),

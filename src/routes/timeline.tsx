@@ -1,3 +1,4 @@
+import { UserAvatar } from "@/components/UserAvatar";
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useCurrentData, useOtherData, useStore } from "@/lib/store";
@@ -48,9 +49,7 @@ function TimelinePage() {
             >
               <span className="absolute -right-[19px] top-6 grid size-4 place-items-center rounded-full border-2 border-background bg-primary" />
               <div className="flex items-start gap-3">
-                <span className="grid size-9 shrink-0 place-items-center rounded-2xl bg-secondary text-lg">
-                  {a.who.avatar}
-                </span>
+                <UserAvatar value={a.who.avatar} size={36} framed={false} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm">
                     <span className="font-bold">{a.who.name}</span> {a.text}
