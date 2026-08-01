@@ -186,6 +186,77 @@ function Dashboard() {
         </div>
       </motion.section>
 
+      {/* صفوف سينمائية أفقية */}
+      <CelebrationModal game={reviewed} review onClose={() => setReviewed(null)} />
+
+      {!!playing.length && (
+        <Rail
+          title="مواصلة اللعب"
+          subtitle="ألعابك النشطة الآن"
+          action={
+            <Link to="/library" className="text-xs text-primary">
+              الكل
+            </Link>
+          }
+        >
+          {playing.map((e, i) => (
+            <RailCard
+              key={e.id}
+              entry={e}
+              index={i}
+              vip
+              action={
+                <LogSessionSheet
+                  entry={e}
+                  trigger={
+                    <Button
+                      size="sm"
+                      className="w-full rounded-xl border-2 border-yellow-300/70 bg-primary font-bold text-primary-foreground shadow-[0_0_25px_-8px_rgba(234,179,8,0.9)] hover:bg-primary/90"
+                    >
+                      <PlayCircle className="size-4" /> تسجيل الجلسة
+                    </Button>
+                  }
+                />
+              }
+            />
+          ))}
+        </Rail>
+      )}
+
+      {!!backlog.length && (
+        <Rail
+          title="ناوي أختمها"
+          subtitle="قائمة الانتظار"
+          action={
+            <Link to="/upcoming" className="text-xs text-primary">
+              الخطة
+            </Link>
+          }
+        >
+          {backlog.map((e, i) => (
+            <RailCard key={e.id} entry={e} index={i} />
+          ))}
+        </Rail>
+      )}
+
+      {!!completed.length && (
+        <Rail
+          title="قاعة الألعاب المكتملة"
+          subtitle="إنجازاتك"
+          action={
+            <Link to="/library" className="text-xs text-primary">
+              الكل
+            </Link>
+          }
+        >
+          {completed.map((e, i) => (
+            <TrophyRailCard key={e.id} entry={e} index={i} onOpen={() => setReviewed(e)} />
+          ))}
+        </Rail>
+      )}
+
+
+
       {/* B — تحدي الأسبوع */}
       <section>
         <SectionTitle title="تحدي الأسبوع" subtitle="ساعات اللعب خلال آخر ٧ أيام" />
