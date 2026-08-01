@@ -10,7 +10,18 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { buzz } from "@/lib/haptics";
-import { Download, Upload, Bell, Users, Palette, UserCog, HardDrive } from "lucide-react";
+import { Download, Upload, Bell, Users, Palette, UserCog, HardDrive, TriangleAlert } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { ReactNode } from "react";
 
 export const Route = createFileRoute("/settings")({
@@ -108,6 +119,7 @@ function SettingsPage() {
   const setUser = useStore((s) => s.setUser);
   const updateProfile = useStore((s) => s.updateProfile);
   const importData = useStore((s) => s.importData);
+  const resetAll = useStore((s) => s.resetAll);
   const data = useCurrentData();
   const other = useOtherData();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -201,6 +213,41 @@ function SettingsPage() {
             }}
           />
         </div>
+      </Card>
+
+      <Card
+        icon={TriangleAlert}
+        title="تصفير شامل (Master Reset)"
+        hint={`يمسح ألعاب ونشاطات وإحصائيات ${data.profile.name} فقط — ملف ${other.profile.name} يبقى كما هو`}
+      >
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" className="w-full rounded-xl">
+              تصفير كل شيء والبدء من الصفر
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent dir="rtl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-right font-display">متأكد من التصفير؟</AlertDialogTitle>
+              <AlertDialogDescription className="text-right">
+                سيتم حذف كل ألعابك وساعاتك ونقاط الخبرة والمستوى والنشاطات نهائيًا من الجهاز والسحابة. لا
+                يمكن التراجع — يُنصح بتصدير نسخة احتياطية أولاً.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2">
+              <AlertDialogCancel className="rounded-xl">إلغاء</AlertDialogCancel>
+              <AlertDialogAction
+                className="rounded-xl"
+                onClick={() => {
+                  buzz([40, 60, 40]);
+                  void resetAll().then(() => toast.success("تم التصفير — بداية جديدة 🎮"));
+                }}
+              >
+                نعم، صفّر كل شيء
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </Card>
 
       <Card icon={Palette} title="المظهر" hint="حركات الواجهة والاهتزاز">
