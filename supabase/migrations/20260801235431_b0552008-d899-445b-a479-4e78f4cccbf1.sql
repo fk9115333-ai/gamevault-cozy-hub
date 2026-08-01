@@ -1,0 +1,1 @@
+ALTER TABLE public.game_entries ADD COLUMN IF NOT EXISTS difficulty text NOT NULL DEFAULT 'normal';

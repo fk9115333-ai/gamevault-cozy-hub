@@ -54,9 +54,10 @@ const QUOTES = [
 ];
 
 /** دقائق اللعب خلال آخر 7 أيام */
-const weekMinutes = (entries: { sessions: { date: string; minutes: number }[] }[]) => {
+const weekMinutes = (entries: { legacy?: boolean; sessions: { date: string; minutes: number }[] }[]) => {
   const from = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
   return entries
+    .filter((e) => !e.legacy)
     .flatMap((e) => e.sessions)
     .filter((s) => (s.date ?? "") >= from)
     .reduce((sum, s) => sum + s.minutes, 0);

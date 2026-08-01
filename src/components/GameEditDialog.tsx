@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Star } from "lucide-react";
-import { isFutureRelease, useStore, type GameEntry, type Status } from "@/lib/store";
+import { DIFFICULTIES, isFutureRelease, useStore, type GameEntry, type Status } from "@/lib/store";
 import { buzz } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -301,6 +301,42 @@ export function GameEditDialog({
                     }}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="block text-xs">مستوى الصعوبة (يحدد نقاط الخبرة)</Label>
+                <div className="grid grid-cols-4 gap-2">
+                  {DIFFICULTIES.map((d) => (
+                    <Button
+                      key={d.v}
+                      size="sm"
+                      variant={(draft.difficulty ?? "normal") === d.v ? "default" : "secondary"}
+                      className="h-11 rounded-2xl whitespace-nowrap px-1 text-[11px]"
+                      onClick={() => {
+                        buzz(20);
+                        set("difficulty", d.v);
+                      }}
+                    >
+                      {d.l}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-2xl bg-secondary/50 px-4 py-3">
+                <div className="min-w-0 pl-3">
+                  <Label className="text-xs">🕰️ ختمت هذه اللعبة قديماً</Label>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    تُحتسب في عدد المكتملة والأوسمة فقط، وتُستثنى من المعدلات والخرائط والتحدي
+                  </p>
+                </div>
+                <Switch
+                  checked={draft.legacy}
+                  onCheckedChange={(v) => {
+                    buzz(30);
+                    set("legacy", v);
+                  }}
+                />
               </div>
 
               <div className="flex items-center justify-between rounded-2xl bg-secondary/50 px-4 py-3">
