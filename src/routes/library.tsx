@@ -152,34 +152,37 @@ function LibraryPage() {
           </div>
         </div>
 
-        {list.length ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-            {list.map((e, i) =>
-              e.status === "completed" ? (
-                <div key={e.id} className="relative">
-                  <CompletedCard entry={e} onOpen={() => setReviewed(e)} />
-                  <GameEditDialog
-                    entry={e}
-                    onCompleted={(done) => setCelebrated(done)}
-                    trigger={
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="absolute left-3 top-3 size-9 rounded-full"
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                    }
-                  />
-                </div>
-              ) : (
-                <GameCard key={e.id} entry={e} index={i} />
-              ),
-            )}
+        {!list.length ? (
+          <EmptyState text="لا توجد ألعاب هنا بعد." />
+        ) : tab === "completed" ? (
+          <div className="space-y-3">
+            {list.map((e) => (
+              <div key={e.id} className="relative">
+                <CompletedCard entry={e} onOpen={() => setReviewed(e)} />
+                <GameEditDialog
+                  entry={e}
+                  onCompleted={(done) => setCelebrated(done)}
+                  trigger={
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="absolute left-3 top-3 size-9 rounded-full"
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                  }
+                />
+              </div>
+            ))}
           </div>
         ) : (
-          <EmptyState text="لا توجد ألعاب هنا بعد." />
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+            {list.map((e, i) => (
+              <GameCard key={e.id} entry={e} index={i} />
+            ))}
+          </div>
         )}
+
       </div>
     </div>
   );
