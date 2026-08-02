@@ -226,32 +226,66 @@ const FRANCHISE_TERMS = [
   "gran turismo",
   "street fighter",
   "tekken",
+  "the phantom pain",
+  "phantom liberty",
+  "silksong",
+  "kingdom come deliverance",
+  "dragon age",
+  "dragon's dogma",
+  "yakuza like a dragon",
+  "like a dragon",
+  "star wars jedi",
+  "a plague tale",
+  "it takes two",
+  "split fiction",
+  "black myth wukong",
+  "clair obscur expedition 33",
+  "stellar blade",
+  "lies of p",
+  "armored core",
+  "wolverine",
+  "grand theft auto vi",
+  "death stranding 2",
+  "resident evil requiem",
+  "the witcher 4",
+  "intergalactic the heretic prophet",
 ];
 
 /** يوسّع البادئات القصيرة إلى أسماء السلاسل الكبرى */
 const franchiseMatches = (q: string) => {
   const n = norm(q);
   if (n.length < 2) return [];
-  return FRANCHISE_TERMS.filter((f) => f.startsWith(n) || f.split(" ").some((w) => w.startsWith(n) && n.length >= 3)).slice(0, 2);
+  return FRANCHISE_TERMS.filter(
+    (f) => f.startsWith(n) || f.split(" ").some((w) => w.startsWith(n) && n.length >= 3),
+  ).slice(0, 3);
 };
 
 export const searchGames = async (q: string, limit = 12) => {
-  const queries = [...new Set([...expandQuery(q), ...franchiseMatches(q)])].slice(0, 4);
-  const batches = await Promise.all(
-    queries.map((query) =>
-      rawg<{ results: RawgGame[] }>("/games", {
-        search: query,
-        page_size: 40,
-        platforms: PLATFORMS,
-        parent_platforms: PARENT_PLATFORMS,
-        ordering: "-added",
-        exclude_collection: "true",
-        exclude_additions: "true",
-      })
-        .then((d) => d.results)
-        .catch(() => [] as RawgGame[]),
+  const raw = q.trim();
+  if (raw.length < 2) return [] as RawgGame[];
+  const queries = [...new Set([...expandQuery(raw), ...franchiseMatches(raw)])].slice(0, 4);
+
+  const fetchQuery = (query: string, extra: Record<string, string | number> = {}) =>
+    rawg<{ results: RawgGame[] }>("/games", {
+      search: query,
+      page_size: 40,
+      ordering: "-added",
+      exclude_collection: "true",
+      exclude_additions: "true",
+      ...extra,
+    })
+      .then((d) => d.results)
+      .catch(() => [] as RawgGame[]);
+
+  const batches = await Promise.all([
+    // الفهرس الأساسي: PC + بلايستيشن + بقية المنصات الكبرى
+    ...queries.map((query) =>
+      fetchQuery(query, { platforms: PLATFORMS, parent_platforms: PARENT_PLATFORMS }),
     ),
-  );
+    // فهرس موسّع بلا قيود منصة لالتقاط الإعلانات والألعاب المرتقبة (تُفلتر محليًا)
+    fetchQuery(raw, { search_precise: "true" }),
+    fetchQuery(raw, { page_size: 20 }),
+  ]);
 
   const unique = new Map<number, RawgGame>();
   for (const g of batches.flat()) if (!unique.has(g.id)) unique.set(g.id, g);
@@ -265,8 +299,8 @@ export const searchGames = async (q: string, limit = 12) => {
     (g) => hasSubstance(g) || MASTER_FRANCHISES.test(g.name) || isUnreleased(g),
   );
 
-  const franchiseHint = franchiseMatches(q);
-  const nq = norm(q);
+  const franchiseHint = franchiseMatches(raw);
+  const nq = norm(raw);
 
   return pool
     .map((g) => {
@@ -274,8 +308,10 @@ export const searchGames = async (q: string, limit = 12) => {
       const s = matchScore(g.name, queries);
       // تطابق حرفي أو بادئة حرفية لما كتبه المستخدم يتصدّر دائمًا (أسلوب Steam)
       const exact = n === nq ? 100000 : n.startsWith(nq) ? 40000 : 0;
+      const wordPrefix = !exact && n.split(" ").some((w) => w.startsWith(nq)) ? 8000 : 0;
       const bonus =
         exact +
+        wordPrefix +
         (MASTER_FRANCHISES.test(g.name) ? 400 : 0) +
         (franchiseHint.some((f) => norm(g.name).startsWith(norm(f))) ? 500 : 0) +
         (isUnreleased(g) && MASTER_FRANCHISES.test(g.name) ? 200 : 0);
@@ -286,6 +322,7 @@ export const searchGames = async (q: string, limit = 12) => {
     .slice(0, limit)
     .map((x) => x.g);
 };
+
 
 
 
