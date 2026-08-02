@@ -121,6 +121,7 @@ function Dashboard() {
   const monthHours = useMemo(() => {
     const key = new Date().toISOString().slice(0, 7);
     const mins = data.entries
+      .filter((e) => !e.legacy)
       .flatMap((e) => e.sessions)
       .filter((s) => s.date?.startsWith(key))
       .reduce((sum, s) => sum + s.minutes, 0);
