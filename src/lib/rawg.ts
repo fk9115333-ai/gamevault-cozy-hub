@@ -43,15 +43,21 @@ async function rawg<T>(path: string, params: Record<string, string | number> = {
   return (await res.json()) as T;
 }
 
-/** إصدارات غير أساسية — نعرض النسخة الأساسية فقط */
+/** إصدارات غير أساسية — نعرض النسخة الأساسية فقط (الريميك/الريماستر مسموح) */
 const EDITION_NOISE =
-  /\b(edition|goty|game of the year|deluxe|ultimate|bundle|director'?s cut|premium|remastered)\b/i;
+  /\b(edition|goty|game of the year|deluxe|ultimate|bundle|director'?s cut|premium)\b/i;
 
 /** إضافات ومحتوى إضافي (DLC) — تُستبعد نهائيًا */
 const DLC_NOISE =
-  /\b(dlc|add-?on|expansion|expansion pass|season pass|story pack|character pack|content pack|mission pack|map pack|skin pack|weapon pack|booster|pack)\b/i;
+  /\b(dlc|add-?on|expansion|expansion pass|season pass|story pack|character pack|content pack|mission pack|map pack|skin pack|weapon pack|booster|pack|episode pack|costume|cosmetic|currency|coins?|credits pack)\b/i;
 
-export const isBaseGame = (name: string) => !EDITION_NOISE.test(name) && !DLC_NOISE.test(name);
+/** نسخ تجريبية ومحتوى غير لعبة كاملة — تُستبعد نهائيًا */
+const DEMO_NOISE =
+  /\b(demo|demos|trial|free trial|playable teaser|teaser|beta|open beta|closed beta|alpha|playtest|test server|preview build|early access|prologue|sampler|soundtrack|ost|original soundtrack|art ?book|digital artbook|companion app|server test|network test|benchmark|multiplayer test)\b/i;
+
+export const isBaseGame = (name: string) =>
+  !EDITION_NOISE.test(name) && !DLC_NOISE.test(name) && !DEMO_NOISE.test(name);
+
 
 /** قائمة بيضاء صارمة: أي منصة جوال/ويب أو منصة خارج المحدد ترفض اللعبة كاملة. */
 export const isCoreGame = (g: RawgGame) => {
