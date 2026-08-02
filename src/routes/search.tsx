@@ -42,10 +42,12 @@ function SearchPage() {
 
   const { data, isFetching } = useQuery({
     queryKey: ["search-full", q],
-    queryFn: () => searchGames(q, 40),
+    queryFn: () => searchGames(q, 60),
     enabled: q.trim().length >= 2,
     staleTime: 1000 * 60 * 10,
+    placeholderData: keepPreviousData,
   });
+
 
   const add = (g: RawgGame, status: Status) => {
     buzz(20);
