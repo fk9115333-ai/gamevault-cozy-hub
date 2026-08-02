@@ -244,6 +244,31 @@ function SettingsPage() {
         </div>
       </Card>
 
+      <Card
+        icon={Archive}
+        title="استيراد الأرشيف التاريخي"
+        hint={`${RETRO_IMPORT.length} لعبة AAA بساعات الختم العالمية — تُسجَّل كـ«ختمت قديماً» ولا تدخل المعدلات اليومية`}
+      >
+        <div className="max-h-52 space-y-1.5 overflow-y-auto pl-1">
+          {RETRO_IMPORT.map((g) => (
+            <div
+              key={g.slug}
+              className="flex items-center justify-between gap-2 rounded-xl bg-secondary/40 px-3 py-2 text-xs"
+            >
+              <bdi className="truncate">{g.title}</bdi>
+              <span className="shrink-0 text-[11px] text-muted-foreground">
+                {g.status === "hype" ? "مرتقبة" : `${g.hours} ساعة`}
+              </span>
+            </div>
+          ))}
+        </div>
+        <Button className="w-full rounded-xl" disabled={importing} onClick={() => void importRetro()}>
+          {importing ? <Loader2 className="size-4 animate-spin" /> : <Archive className="size-4" />}
+          {importing ? "جارٍ الاستيراد…" : "استيراد المكتبة القديمة"}
+        </Button>
+      </Card>
+
+
       <Card icon={HardDrive} title="النسخ الاحتياطي" hint="لا تفقد سجل ألعابك أبدًا">
         <div className="flex flex-wrap gap-2">
           <Button onClick={exportJson} className="rounded-xl">
