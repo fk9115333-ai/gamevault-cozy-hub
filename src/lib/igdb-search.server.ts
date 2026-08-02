@@ -42,9 +42,10 @@ export async function searchIgdb(q: string, limit = 12): Promise<GameDTO[]> {
   const unique = new Map<number, GameDTO>();
   for (const g of batches.flat()) if (!unique.has(g.id)) unique.set(g.id, g);
 
-  const all = [...unique.values()].filter((g) => isBaseGame(g.name));
+  const all = [...unique.values()].filter((g) => isBaseGame(g.name) && !!g.background_image);
+  // نستبعد ألعاب المعجبين والحشو المغمور: يجب وجود جمهور أو تقييم نقدي
   const pool = all.filter(
-    (g) => hasSubstance(g) || MASTER_FRANCHISES.test(g.name) || isUnreleased(g),
+    (g) => hasSubstance(g) || (isUnreleased(g) && ((g.added ?? 0) >= 10 || (g.hypes ?? 0) >= 5)),
   );
 
   const franchiseHint = franchiseMatches(raw);
