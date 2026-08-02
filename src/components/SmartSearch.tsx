@@ -105,12 +105,14 @@ export function SmartSearch() {
                 loading="lazy"
                 className="size-16 shrink-0 rounded-xl object-cover"
               />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{g.name}</p>
-                <p className="truncate text-xs text-muted-foreground">
+              <div className="min-w-0 flex-1 space-y-0.5">
+                <p className="text-sm font-semibold leading-snug break-words line-clamp-2">
+                  <bdi>{g.name}</bdi>
+                </p>
+                <p className="text-xs text-muted-foreground line-clamp-1">
                   {g.released?.slice(0, 4) ?? "—"} · {(g.genres ?? []).map((x) => x.name).join("، ")}
                 </p>
-                <p className="truncate text-[11px] text-muted-foreground">
+                <p className="text-[11px] text-muted-foreground line-clamp-1">
                   {g.developers?.[0]?.name ?? ""}
                   {g.metacritic ? ` · ميتاكريتيك ${g.metacritic}` : ""}
                   {g.rating ? ` · ★ ${g.rating}` : ""}
