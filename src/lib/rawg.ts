@@ -91,7 +91,7 @@ const ALIASES: [RegExp, string][] = [
   [/\bgta\b/i, "grand theft auto"],
   [/\bac\b/i, "assassin's creed"],
   [/\bcod\b/i, "call of duty"],
-  [/\bmgs\b/i, "metal gear solid"],
+  [/\bmgs\s*(\d+|v)?\b/i, "metal gear solid $1"],
   [/\bgow\b/i, "god of war"],
   [/\btlou\b/i, "the last of us"],
   [/\bdmc\b/i, "devil may cry"],
@@ -100,6 +100,17 @@ const ALIASES: [RegExp, string][] = [
   [/\bbg\s*3\b/i, "baldur's gate 3"],
   [/\bmk\b/i, "mortal kombat"],
   [/\bnfs\b/i, "need for speed"],
+  [/\bsh\s*(\d+)\b/i, "silent hill $1"],
+  [/\bgt\s*(\d+)\b/i, "gran turismo $1"],
+  [/\bhzd\b/i, "horizon zero dawn"],
+  [/\bfw\b/i, "horizon forbidden west"],
+  [/\bsm\s*(\d+)?\b/i, "spider-man $1"],
+  [/\bpubg\b/i, "playerunknown battlegrounds"],
+  [/\bdbd\b/i, "dead by daylight"],
+  [/\bds\s*(\d+)?\b/i, "dark souls $1"],
+  [/\bwd\s*(\d+)?\b/i, "watch dogs $1"],
+  [/\bcp\s*2077\b/i, "cyberpunk 2077"],
+  [/\bgow\s*r\b/i, "god of war ragnarok"],
 ];
 
 const expandQuery = (q: string) => {
@@ -114,22 +125,38 @@ const expandQuery = (q: string) => {
 const norm = (s: string) =>
   s.toLowerCase().replace(/['’:\-–—.,!?]/g, "").replace(/\s+/g, " ").trim();
 
-/** درجة تطابق ضبابية: بادئة > احتواء > تطابق كلمات جزئي */
+/** تطابق تسلسلي ضبابي (ykuza → yakuza) */
+const subsequence = (needle: string, hay: string) => {
+  let i = 0;
+  for (const ch of hay) if (ch === needle[i]) i++;
+  return i === needle.length;
+};
+
+/** درجة تطابق ضبابية: بادئة > احتواء > تطابق كلمات جزئي > تسلسل حروف */
 const matchScore = (name: string, queries: string[]) => {
   const n = norm(name);
+  const words = n.split(" ");
   let best = 0;
   for (const q of queries) {
     const nq = norm(q);
     if (!nq) continue;
     if (n === nq) best = Math.max(best, 1000);
-    else if (n.startsWith(nq)) best = Math.max(best, 800);
-    else if (n.includes(nq)) best = Math.max(best, 600);
+    else if (n.startsWith(nq)) best = Math.max(best, 850);
+    else if (words.some((w) => w === nq)) best = Math.max(best, 720);
+    else if (n.includes(nq)) best = Math.max(best, 640);
     const tokens = nq.split(" ").filter(Boolean);
-    const hits = tokens.filter((t) => n.split(" ").some((w) => w.startsWith(t))).length;
-    if (tokens.length) best = Math.max(best, Math.round((hits / tokens.length) * 500));
+    if (tokens.length) {
+      const hits = tokens.filter((t) => words.some((w) => w.startsWith(t))).length;
+      const loose = tokens.filter((t) => words.some((w) => w.includes(t))).length;
+      best = Math.max(best, Math.round((hits / tokens.length) * 560));
+      best = Math.max(best, Math.round((loose / tokens.length) * 380));
+    }
+    if (best === 0 && nq.length >= 4 && subsequence(nq.replace(/ /g, ""), n.replace(/ /g, "")))
+      best = Math.max(best, 200);
   }
   return best;
 };
+
 
 /** لعبة لم تصدر بعد (تاريخ مستقبلي أو TBA) */
 export const isUnreleased = (g: RawgGame) =>
