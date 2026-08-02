@@ -91,7 +91,7 @@ const ALIASES: [RegExp, string][] = [
   [/\bgta\b/i, "grand theft auto"],
   [/\bac\b/i, "assassin's creed"],
   [/\bcod\b/i, "call of duty"],
-  [/\bmgs\b/i, "metal gear solid"],
+  [/\bmgs\s*(\d+|v)?\b/i, "metal gear solid $1"],
   [/\bgow\b/i, "god of war"],
   [/\btlou\b/i, "the last of us"],
   [/\bdmc\b/i, "devil may cry"],
@@ -100,6 +100,17 @@ const ALIASES: [RegExp, string][] = [
   [/\bbg\s*3\b/i, "baldur's gate 3"],
   [/\bmk\b/i, "mortal kombat"],
   [/\bnfs\b/i, "need for speed"],
+  [/\bsh\s*(\d+)\b/i, "silent hill $1"],
+  [/\bgt\s*(\d+)\b/i, "gran turismo $1"],
+  [/\bhzd\b/i, "horizon zero dawn"],
+  [/\bfw\b/i, "horizon forbidden west"],
+  [/\bsm\s*(\d+)?\b/i, "spider-man $1"],
+  [/\bpubg\b/i, "playerunknown battlegrounds"],
+  [/\bdbd\b/i, "dead by daylight"],
+  [/\bds\s*(\d+)?\b/i, "dark souls $1"],
+  [/\bwd\s*(\d+)?\b/i, "watch dogs $1"],
+  [/\bcp\s*2077\b/i, "cyberpunk 2077"],
+  [/\bgow\s*r\b/i, "god of war ragnarok"],
 ];
 
 const expandQuery = (q: string) => {
@@ -114,22 +125,38 @@ const expandQuery = (q: string) => {
 const norm = (s: string) =>
   s.toLowerCase().replace(/['’:\-–—.,!?]/g, "").replace(/\s+/g, " ").trim();
 
-/** درجة تطابق ضبابية: بادئة > احتواء > تطابق كلمات جزئي */
+/** تطابق تسلسلي ضبابي (ykuza → yakuza) */
+const subsequence = (needle: string, hay: string) => {
+  let i = 0;
+  for (const ch of hay) if (ch === needle[i]) i++;
+  return i === needle.length;
+};
+
+/** درجة تطابق ضبابية: بادئة > احتواء > تطابق كلمات جزئي > تسلسل حروف */
 const matchScore = (name: string, queries: string[]) => {
   const n = norm(name);
+  const words = n.split(" ");
   let best = 0;
   for (const q of queries) {
     const nq = norm(q);
     if (!nq) continue;
     if (n === nq) best = Math.max(best, 1000);
-    else if (n.startsWith(nq)) best = Math.max(best, 800);
-    else if (n.includes(nq)) best = Math.max(best, 600);
+    else if (n.startsWith(nq)) best = Math.max(best, 850);
+    else if (words.some((w) => w === nq)) best = Math.max(best, 720);
+    else if (n.includes(nq)) best = Math.max(best, 640);
     const tokens = nq.split(" ").filter(Boolean);
-    const hits = tokens.filter((t) => n.split(" ").some((w) => w.startsWith(t))).length;
-    if (tokens.length) best = Math.max(best, Math.round((hits / tokens.length) * 500));
+    if (tokens.length) {
+      const hits = tokens.filter((t) => words.some((w) => w.startsWith(t))).length;
+      const loose = tokens.filter((t) => words.some((w) => w.includes(t))).length;
+      best = Math.max(best, Math.round((hits / tokens.length) * 560));
+      best = Math.max(best, Math.round((loose / tokens.length) * 380));
+    }
+    if (best === 0 && nq.length >= 4 && subsequence(nq.replace(/ /g, ""), n.replace(/ /g, "")))
+      best = Math.max(best, 200);
   }
   return best;
 };
+
 
 /** لعبة لم تصدر بعد (تاريخ مستقبلي أو TBA) */
 export const isUnreleased = (g: RawgGame) =>
@@ -199,32 +226,66 @@ const FRANCHISE_TERMS = [
   "gran turismo",
   "street fighter",
   "tekken",
+  "the phantom pain",
+  "phantom liberty",
+  "silksong",
+  "kingdom come deliverance",
+  "dragon age",
+  "dragon's dogma",
+  "yakuza like a dragon",
+  "like a dragon",
+  "star wars jedi",
+  "a plague tale",
+  "it takes two",
+  "split fiction",
+  "black myth wukong",
+  "clair obscur expedition 33",
+  "stellar blade",
+  "lies of p",
+  "armored core",
+  "wolverine",
+  "grand theft auto vi",
+  "death stranding 2",
+  "resident evil requiem",
+  "the witcher 4",
+  "intergalactic the heretic prophet",
 ];
 
 /** يوسّع البادئات القصيرة إلى أسماء السلاسل الكبرى */
 const franchiseMatches = (q: string) => {
   const n = norm(q);
   if (n.length < 2) return [];
-  return FRANCHISE_TERMS.filter((f) => f.startsWith(n) || f.split(" ").some((w) => w.startsWith(n) && n.length >= 3)).slice(0, 2);
+  return FRANCHISE_TERMS.filter(
+    (f) => f.startsWith(n) || f.split(" ").some((w) => w.startsWith(n) && n.length >= 3),
+  ).slice(0, 3);
 };
 
 export const searchGames = async (q: string, limit = 12) => {
-  const queries = [...new Set([...expandQuery(q), ...franchiseMatches(q)])].slice(0, 4);
-  const batches = await Promise.all(
-    queries.map((query) =>
-      rawg<{ results: RawgGame[] }>("/games", {
-        search: query,
-        page_size: 40,
-        platforms: PLATFORMS,
-        parent_platforms: PARENT_PLATFORMS,
-        ordering: "-added",
-        exclude_collection: "true",
-        exclude_additions: "true",
-      })
-        .then((d) => d.results)
-        .catch(() => [] as RawgGame[]),
+  const raw = q.trim();
+  if (raw.length < 2) return [] as RawgGame[];
+  const queries = [...new Set([...expandQuery(raw), ...franchiseMatches(raw)])].slice(0, 4);
+
+  const fetchQuery = (query: string, extra: Record<string, string | number> = {}) =>
+    rawg<{ results: RawgGame[] }>("/games", {
+      search: query,
+      page_size: 40,
+      ordering: "-added",
+      exclude_collection: "true",
+      exclude_additions: "true",
+      ...extra,
+    })
+      .then((d) => d.results)
+      .catch(() => [] as RawgGame[]);
+
+  const batches = await Promise.all([
+    // الفهرس الأساسي: PC + بلايستيشن + بقية المنصات الكبرى
+    ...queries.map((query) =>
+      fetchQuery(query, { platforms: PLATFORMS, parent_platforms: PARENT_PLATFORMS }),
     ),
-  );
+    // فهرس موسّع بلا قيود منصة لالتقاط الإعلانات والألعاب المرتقبة (تُفلتر محليًا)
+    fetchQuery(raw, { search_precise: "true" }),
+    fetchQuery(raw, { page_size: 20 }),
+  ]);
 
   const unique = new Map<number, RawgGame>();
   for (const g of batches.flat()) if (!unique.has(g.id)) unique.set(g.id, g);
@@ -238,8 +299,8 @@ export const searchGames = async (q: string, limit = 12) => {
     (g) => hasSubstance(g) || MASTER_FRANCHISES.test(g.name) || isUnreleased(g),
   );
 
-  const franchiseHint = franchiseMatches(q);
-  const nq = norm(q);
+  const franchiseHint = franchiseMatches(raw);
+  const nq = norm(raw);
 
   return pool
     .map((g) => {
@@ -247,8 +308,10 @@ export const searchGames = async (q: string, limit = 12) => {
       const s = matchScore(g.name, queries);
       // تطابق حرفي أو بادئة حرفية لما كتبه المستخدم يتصدّر دائمًا (أسلوب Steam)
       const exact = n === nq ? 100000 : n.startsWith(nq) ? 40000 : 0;
+      const wordPrefix = !exact && n.split(" ").some((w) => w.startsWith(nq)) ? 8000 : 0;
       const bonus =
         exact +
+        wordPrefix +
         (MASTER_FRANCHISES.test(g.name) ? 400 : 0) +
         (franchiseHint.some((f) => norm(g.name).startsWith(norm(f))) ? 500 : 0) +
         (isUnreleased(g) && MASTER_FRANCHISES.test(g.name) ? 200 : 0);
@@ -259,6 +322,7 @@ export const searchGames = async (q: string, limit = 12) => {
     .slice(0, limit)
     .map((x) => x.g);
 };
+
 
 
 

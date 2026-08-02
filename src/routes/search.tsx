@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Search, Loader2, Plus } from "lucide-react";
 import { searchGames, isUnreleased, type RawgGame } from "@/lib/rawg";
 import { useStore, type Status } from "@/lib/store";
 import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+
 
 export const Route = createFileRoute("/search")({
   validateSearch: (s: Record<string, unknown>) => ({ q: typeof s["q"] === "string" ? (s["q"] as string) : "" }),
@@ -41,10 +42,12 @@ function SearchPage() {
 
   const { data, isFetching } = useQuery({
     queryKey: ["search-full", q],
-    queryFn: () => searchGames(q, 40),
+    queryFn: () => searchGames(q, 60),
     enabled: q.trim().length >= 2,
     staleTime: 1000 * 60 * 10,
+    placeholderData: keepPreviousData,
   });
+
 
   const add = (g: RawgGame, status: Status) => {
     buzz(20);

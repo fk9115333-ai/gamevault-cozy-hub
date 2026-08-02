@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Search, Plus, Loader2 } from "lucide-react";
 import { searchGames, isUnreleased, type RawgGame } from "@/lib/rawg";
@@ -8,6 +8,7 @@ import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { GameEditDialog } from "@/components/GameEditDialog";
+
 
 const quickAdd: { status: Status; label: string }[] = [
   { status: "current", label: "قيد اللعب" },
@@ -18,6 +19,7 @@ const quickAdd: { status: Status; label: string }[] = [
 
 export function SmartSearch() {
   const [q, setQ] = useState("");
+  const [debounced, setDebounced] = useState("");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -27,11 +29,18 @@ export function SmartSearch() {
     editId ? (s.users[s.currentUser].entries.find((e) => e.id === editId) ?? null) : null,
   );
 
+  // استعلام فوري بأسلوب ستيم مع تهدئة خفيفة تمنع إغراق الشبكة
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(q.trim()), 160);
+    return () => clearTimeout(t);
+  }, [q]);
+
   const { data, isFetching } = useQuery({
-    queryKey: ["search", q],
-    queryFn: () => searchGames(q),
-    enabled: q.trim().length >= 2,
+    queryKey: ["search", debounced],
+    queryFn: () => searchGames(debounced, 14),
+    enabled: debounced.length >= 2,
     staleTime: 1000 * 60 * 10,
+    placeholderData: keepPreviousData,
   });
 
   useEffect(() => {
@@ -41,6 +50,7 @@ export function SmartSearch() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
 
   const pick = (g: RawgGame) => {
     setOpen(false);
