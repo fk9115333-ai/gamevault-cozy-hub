@@ -48,6 +48,13 @@ export function SmartSearch() {
     navigate({ to: "/game/$id", params: { id: String(g.id) } });
   };
 
+  const submit = () => {
+    const term = q.trim();
+    if (term.length < 2) return;
+    setOpen(false);
+    navigate({ to: "/search", search: { q: term } });
+  };
+
   const add = (g: RawgGame, status: Status) => {
     buzz(status === "completed" ? [40, 60, 40] : 20);
     addGame(g, status);
@@ -75,11 +82,21 @@ export function SmartSearch() {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              submit();
+            }
+            if (e.key === "Escape") setOpen(false);
+          }}
+          enterKeyHint="search"
+          type="search"
           placeholder="ابحث عن أي لعبة… اكتب حرفين فقط"
-          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
         />
         {isFetching && <Loader2 className="size-4 animate-spin text-primary" />}
       </div>
+
 
       {open && q.trim().length >= 2 && (
         <div className="absolute inset-x-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-3xl glass p-2">
@@ -99,18 +116,26 @@ export function SmartSearch() {
               className="group flex cursor-pointer items-center gap-3 rounded-2xl p-2 transition-colors hover:bg-secondary/60"
               onClick={() => pick(g)}
             >
-              <img
-                src={g.background_image ?? "/favicon.ico"}
-                alt={g.name}
-                loading="lazy"
-                className="size-16 shrink-0 rounded-xl object-cover"
-              />
+              <div className="relative shrink-0">
+                <img
+                  src={g.background_image ?? "/favicon.ico"}
+                  alt={g.name}
+                  loading="lazy"
+                  className="size-16 rounded-xl object-cover"
+                />
+                {isUnreleased(g) && (
+                  <span className="absolute -bottom-1 right-1 rounded-full bg-accent px-1.5 py-0.5 text-[9px] font-bold text-accent-foreground">
+                    قريبًا
+                  </span>
+                )}
+              </div>
               <div className="min-w-0 flex-1 space-y-0.5">
                 <p className="text-sm font-semibold leading-snug break-words line-clamp-2">
                   <bdi>{g.name}</bdi>
                 </p>
                 <p className="text-xs text-muted-foreground line-clamp-1">
-                  {g.released?.slice(0, 4) ?? "—"} · {(g.genres ?? []).map((x) => x.name).join("، ")}
+                  {isUnreleased(g) ? (g.released ?? "بلا تاريخ") : (g.released?.slice(0, 4) ?? "—")} ·{" "}
+                  {(g.genres ?? []).map((x) => x.name).join("، ")}
                 </p>
                 <p className="text-[11px] text-muted-foreground line-clamp-1">
                   {g.developers?.[0]?.name ?? ""}
@@ -118,6 +143,7 @@ export function SmartSearch() {
                   {g.rating ? ` · ★ ${g.rating}` : ""}
                 </p>
               </div>
+
               <div className="hidden shrink-0 gap-1 group-hover:flex md:flex">
                 {(isUnreleased(g)
                   ? quickAdd.filter((a) => a.status === "hype")
@@ -141,6 +167,15 @@ export function SmartSearch() {
 
             </div>
           ))}
+          {!!data?.length && (
+            <button
+              type="button"
+              onClick={submit}
+              className="mt-1 w-full rounded-2xl bg-primary/12 px-4 py-2.5 text-center text-sm font-bold text-primary transition-colors hover:bg-primary/20"
+            >
+              عرض كل النتائج لـ «{q.trim()}»
+            </button>
+          )}
         </div>
       )}
     </div>

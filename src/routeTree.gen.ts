@@ -14,6 +14,7 @@ import { Route as HallRouteImport } from './routes/hall'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as TimelineRouteImport } from './routes/timeline'
@@ -45,6 +46,11 @@ const LibraryRoute = LibraryRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
+  '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
   '/timeline': typeof TimelineRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
+  '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
   '/timeline': typeof TimelineRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
+  '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
   '/timeline': typeof TimelineRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/library'
     | '/profile'
+    | '/search'
     | '/settings'
     | '/stats'
     | '/timeline'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/library'
     | '/profile'
+    | '/search'
     | '/settings'
     | '/stats'
     | '/timeline'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/library'
     | '/profile'
+    | '/search'
     | '/settings'
     | '/stats'
     | '/timeline'
@@ -177,6 +189,7 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute
   LibraryRoute: typeof LibraryRoute
   ProfileRoute: typeof ProfileRoute
+  SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   StatsRoute: typeof StatsRoute
   TimelineRoute: typeof TimelineRoute
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -281,6 +301,7 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   LibraryRoute: LibraryRoute,
   ProfileRoute: ProfileRoute,
+  SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   StatsRoute: StatsRoute,
   TimelineRoute: TimelineRoute,
