@@ -167,6 +167,15 @@ export function SmartSearch() {
 
             </div>
           ))}
+          {!!data?.length && (
+            <button
+              type="button"
+              onClick={submit}
+              className="mt-1 w-full rounded-2xl bg-primary/12 px-4 py-2.5 text-center text-sm font-bold text-primary transition-colors hover:bg-primary/20"
+            >
+              عرض كل النتائج لـ «{q.trim()}»
+            </button>
+          )}
         </div>
       )}
     </div>
