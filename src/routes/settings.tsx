@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useStore, useCurrentData, useOtherData, type UserId } from "@/lib/store";
 import { SectionTitle } from "@/components/ui-bits";
 import { AvatarPicker } from "@/components/AvatarPicker";
@@ -10,7 +10,20 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { buzz } from "@/lib/haptics";
-import { Download, Upload, Bell, Users, Palette, UserCog, HardDrive, TriangleAlert } from "lucide-react";
+import { getGameBySlug } from "@/lib/rawg";
+import { RETRO_IMPORT } from "@/lib/retro-import";
+import {
+  Download,
+  Upload,
+  Bell,
+  Users,
+  Palette,
+  UserCog,
+  HardDrive,
+  TriangleAlert,
+  Archive,
+  Loader2,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +36,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import type { ReactNode } from "react";
+
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -120,12 +134,48 @@ function SettingsPage() {
   const updateProfile = useStore((s) => s.updateProfile);
   const importData = useStore((s) => s.importData);
   const resetAll = useStore((s) => s.resetAll);
+  const bulkAdd = useStore((s) => s.bulkAdd);
   const data = useCurrentData();
   const other = useOtherData();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
 
   const notifyFlags = readFlags(NOTIFY_KEY, notifications.map((n) => n.id));
   const appearanceFlags = readFlags(APPEARANCE_KEY, appearance.map((a) => a.id));
+
+  const importRetro = async () => {
+    buzz(30);
+    setImporting(true);
+    try {
+      const fetched = await Promise.allSettled(
+        RETRO_IMPORT.map(async (item) => ({ item, game: await getGameBySlug(item.slug) })),
+      );
+      const items = fetched.flatMap((r) =>
+        r.status === "fulfilled"
+          ? [
+              {
+                game: r.value.game,
+                status: r.value.item.status,
+                hours: r.value.item.hours,
+                legacy: r.value.item.status === "completed",
+              },
+            ]
+          : [],
+      );
+      if (!items.length) {
+        toast.error("تعذر جلب الألعاب — حاول مرة أخرى");
+        return;
+      }
+      bulkAdd(items);
+      buzz([40, 60, 40]);
+      toast.success(`تم استيراد ${items.length} لعبة إلى الأرشيف التاريخي 🗄️`);
+    } catch {
+      toast.error("فشل الاستيراد");
+    } finally {
+      setImporting(false);
+    }
+  };
+
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify({ users }, null, 2)], { type: "application/json" });
@@ -193,6 +243,31 @@ function SettingsPage() {
           ))}
         </div>
       </Card>
+
+      <Card
+        icon={Archive}
+        title="استيراد الأرشيف التاريخي"
+        hint={`${RETRO_IMPORT.length} لعبة AAA بساعات الختم العالمية — تُسجَّل كـ«ختمت قديماً» ولا تدخل المعدلات اليومية`}
+      >
+        <div className="max-h-52 space-y-1.5 overflow-y-auto pl-1">
+          {RETRO_IMPORT.map((g) => (
+            <div
+              key={g.slug}
+              className="flex items-center justify-between gap-2 rounded-xl bg-secondary/40 px-3 py-2 text-xs"
+            >
+              <bdi className="truncate">{g.title}</bdi>
+              <span className="shrink-0 text-[11px] text-muted-foreground">
+                {g.status === "hype" ? "مرتقبة" : `${g.hours} ساعة`}
+              </span>
+            </div>
+          ))}
+        </div>
+        <Button className="w-full rounded-xl" disabled={importing} onClick={() => void importRetro()}>
+          {importing ? <Loader2 className="size-4 animate-spin" /> : <Archive className="size-4" />}
+          {importing ? "جارٍ الاستيراد…" : "استيراد المكتبة القديمة"}
+        </Button>
+      </Card>
+
 
       <Card icon={HardDrive} title="النسخ الاحتياطي" hint="لا تفقد سجل ألعابك أبدًا">
         <div className="flex flex-wrap gap-2">

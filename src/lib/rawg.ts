@@ -64,22 +64,42 @@ export const isCoreGame = (g: RawgGame) => {
   );
 };
 
+/** سلاسل كبرى تُرفع دائمًا لأعلى نتائج البحث والتوصيات */
+const MASTER_FRANCHISES =
+  /\b(resident evil|metal gear|batman: ?arkham|arkham|god of war|the last of us|uncharted|horizon|spider-?man|ghost of tsushima|elden ring|dark souls|bloodborne|sekiro|final fantasy|silent hill|red dead|grand theft auto|gta|assassin'?s creed|far cry|cyberpunk|the witcher|mass effect|dragon age|halo|gears of war|doom|call of duty|battlefield|death stranding|hitman|tomb raider|dishonored|fallout|the elder scrolls|skyrim|hogwarts|baldur'?s gate|starfield|forza|it takes two|a plague tale|alan wake|control|returnal|ratchet|gran turismo|nier|persona|monster hunter|devil may cry|street fighter|tekken|mortal kombat|pragmata|silksong|days gone|infamous|bioshock|borderlands|diablo|stalker|kingdom come|expedition 33)\b/i;
+
+/** رتبة الجودة: السلاسل الكبرى ثم التقييم النقدي ثم الشعبية */
+const prestige = (g: RawgGame) =>
+  (MASTER_FRANCHISES.test(g.name) ? 100000 : 0) +
+  (g.metacritic ?? 0) * 200 +
+  Math.min(60000, g.added ?? 0);
+
+const byPrestige = (a: RawgGame, b: RawgGame) => prestige(b) - prestige(a);
+
 /** فلترة موحّدة: لعبة أساسية + منصات رئيسية */
 export const cleanList = (list: RawgGame[]) =>
   list.filter((g) => isBaseGame(g.name) && isCoreGame(g));
 
+/** يستبعد الحشو المغمور: بلا صورة وبلا جمهور ولا تقييم نقدي */
+const hasSubstance = (g: RawgGame) =>
+  !!g.background_image && ((g.added ?? 0) >= 200 || (g.metacritic ?? 0) >= 70 || (g.ratings_count ?? 0) >= 60);
 
 export const searchGames = (q: string) =>
   rawg<{ results: RawgGame[] }>("/games", {
     search: q,
-    page_size: 20,
+    page_size: 40,
     search_precise: "true",
     platforms: PLATFORMS,
     parent_platforms: PARENT_PLATFORMS,
     ordering: "-added",
     exclude_collection: "true",
     exclude_additions: "true",
-  }).then((d) => cleanList(d.results).slice(0, 12));
+  }).then((d) => {
+    const clean = cleanList(d.results);
+    const strong = clean.filter(hasSubstance);
+    return (strong.length ? strong : clean).sort(byPrestige).slice(0, 12);
+  });
+
 
 export const getGame = (id: string | number) => rawg<RawgGame>(`/games/${id}`);
 
@@ -96,15 +116,33 @@ export const getSimilar = (id: string | number) =>
 export const getTrending = () =>
   rawg<{ results: RawgGame[] }>("/games", {
     ordering: "-added",
-    page_size: 12,
+    page_size: 24,
     platforms: PLATFORMS,
     parent_platforms: PARENT_PLATFORMS,
     exclude_collection: "true",
     exclude_additions: "true",
     dates: `${new Date().getFullYear() - 2}-01-01,${new Date().toISOString().slice(0, 10)}`,
-  }).then((d) => cleanList(d.results));
+  }).then((d) => cleanList(d.results).filter(hasSubstance).sort(byPrestige).slice(0, 12));
+
+/** إصدارات مرتقبة كبرى فقط (PC/PlayStation) */
+export const getUpcoming = () =>
+  rawg<{ results: RawgGame[] }>("/games", {
+    ordering: "-added",
+    page_size: 40,
+    platforms: PLATFORMS,
+    parent_platforms: PARENT_PLATFORMS,
+    exclude_collection: "true",
+    exclude_additions: "true",
+    dates: `${new Date().toISOString().slice(0, 10)},${new Date().getFullYear() + 3}-12-31`,
+  })
+    .then((d) => cleanList(d.results).filter((g) => !!g.background_image).sort(byPrestige).slice(0, 15))
+    .catch(() => [] as RawgGame[]);
+
+/** جلب لعبة بالمُعرّف النصي (slug) — للاستيراد الجماعي */
+export const getGameBySlug = (slug: string) => rawg<RawgGame>(`/games/${slug}`);
 
 const CURATED_AAA_SLUGS = [
+  "god-of-war-2",
   "god-of-war-ragnarok",
   "elden-ring",
   "cyberpunk-2077",
@@ -112,7 +150,30 @@ const CURATED_AAA_SLUGS = [
   "marvels-spider-man-2",
   "red-dead-redemption-2",
   "ghost-of-tsushima",
+  "the-last-of-us-part-2",
+  "resident-evil-4-2023",
+  "resident-evil-2-2019",
+  "resident-evil-village",
+  "batman-arkham-knight",
+  "batman-arkham-city-2",
+  "metal-gear-solid-v-the-phantom-pain",
+  "sekiro-shadows-die-twice",
+  "bloodborne",
+  "dark-souls-iii",
+  "horizon-forbidden-west",
+  "the-witcher-3-wild-hunt",
+  "death-stranding",
+  "uncharted-4-a-thiefs-end",
+  "a-plague-tale-requiem",
+  "alan-wake-2",
+  "hogwarts-legacy",
+  "control",
+  "nier-automata",
+  "final-fantasy-vii-remake",
+  "returnal",
+  "star-wars-jedi-survivor",
 ] as const;
+
 
 const PREMIUM_GENRES = new Set(["action", "role-playing-games-rpg", "adventure", "shooter"]);
 
@@ -169,8 +230,9 @@ export const getRecommended = async (
   );
 
   const [dynamic, curated] = await Promise.all([dynamicRequest, curatedRequest]);
-  const merged = [...dynamic, ...curated];
+  const merged = [...curated, ...dynamic];
   const unique = new Map<number, RawgGame>();
   for (const game of merged) if (excludeOwned(game) && !unique.has(game.id)) unique.set(game.id, game);
-  return [...unique.values()].slice(0, 18);
+  return [...unique.values()].sort(byPrestige).slice(0, 18);
 };
+

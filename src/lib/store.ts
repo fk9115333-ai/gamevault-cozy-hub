@@ -115,6 +115,9 @@ type State = {
   setUser: (u: UserId) => void;
   chooseProfile: (u: UserId) => void;
   addGame: (game: RawgGame, status: Status) => void;
+  /** استيراد جماعي: ألعاب مختومة قديمًا بساعاتها العالمية أو إصدارات مرتقبة */
+  bulkAdd: (items: { game: RawgGame; status: Status; hours?: number; legacy?: boolean }[]) => void;
+
   updateGame: (id: number, patch: Partial<GameEntry>) => void;
   removeGame: (id: number) => void;
   toggleFavorite: (id: number) => void;
@@ -312,7 +315,29 @@ export const useStore = create<State>()(
               `أُضيفت «${g.name}» إلى ${statusLabel[status]}`,
             );
           }),
+        bulkAdd: (items) =>
+          mutate((u, uid) => {
+            const map = new Map(u.entries.map((e) => [e.id, e]));
+            const now = new Date().toISOString();
+            for (const it of items) {
+              const base = map.get(it.game.id) ?? entryFromRawg(it.game, it.status);
+              const status = resolveStatus(it.game.released, it.status);
+              map.set(it.game.id, {
+                ...base,
+                status,
+                hours: it.hours ?? base.hours,
+                legacy: it.legacy ?? base.legacy,
+                progress: status === "completed" ? 100 : base.progress,
+                startedAt: status === "completed" && it.legacy ? null : base.startedAt,
+                completedAt: status === "completed" ? (base.completedAt ?? now) : null,
+              });
+            }
+            const entries = [...map.values()];
+            pushEntries(uid, entries);
+            return { ...u, entries };
+          }),
         updateGame: (id, patch) => applyEntry(id, patch),
+
         removeGame: (id) =>
           mutate((u, uid) => {
             cloudDelete(uid, id);

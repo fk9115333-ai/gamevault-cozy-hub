@@ -7,6 +7,8 @@ export type CompletionSummary = {
   startedAt: string | null;
   completedAt: string | null;
   sessions: number;
+  /** ختمة قديمة (أرشيف تاريخي) — بلا معدلات ولا تواريخ */
+  legacy: boolean;
   badge: { label: string; emoji: string; hint: string };
 };
 
@@ -21,6 +23,22 @@ function pacingBadge(days: number | null, dailyAvg: number | null, hours: number
 
 /** يحسب بطاقة الختم التفصيلية من بيانات اللعبة المخزّنة */
 export function completionSummary(entry: GameEntry): CompletionSummary {
+  const hours = Math.round(entry.hours * 10) / 10;
+
+  // ختمة قديمة: لا تواريخ ولا معدلات يومية إطلاقًا حتى لا تشوّه الإحصائيات
+  if (entry.legacy) {
+    return {
+      hours,
+      days: null,
+      dailyAvg: null,
+      startedAt: null,
+      completedAt: null,
+      sessions: 0,
+      legacy: true,
+      badge: { label: "ختمت قديماً (أرشيف تاريخي)", emoji: "🗄️", hint: "لا تُحتسب في المعدلات اليومية أو تحدي الأسبوع" },
+    };
+  }
+
   const firstSession = [...entry.sessions].sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""))[0];
   const startedAt = entry.startedAt ?? (firstSession?.date ? new Date(firstSession.date).toISOString() : null);
   const completedAt = entry.completedAt;
@@ -32,7 +50,6 @@ export function completionSummary(entry: GameEntry): CompletionSummary {
     days = Math.max(1, diff);
   }
 
-  const hours = Math.round(entry.hours * 10) / 10;
   const dailyAvg = days && hours > 0 ? Math.round((hours / days) * 10) / 10 : null;
 
   return {
@@ -42,6 +59,8 @@ export function completionSummary(entry: GameEntry): CompletionSummary {
     startedAt,
     completedAt,
     sessions: entry.sessions.length,
+    legacy: false,
     badge: pacingBadge(days, dailyAvg, hours),
   };
 }
+
