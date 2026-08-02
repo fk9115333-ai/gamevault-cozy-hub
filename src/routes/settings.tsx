@@ -134,12 +134,48 @@ function SettingsPage() {
   const updateProfile = useStore((s) => s.updateProfile);
   const importData = useStore((s) => s.importData);
   const resetAll = useStore((s) => s.resetAll);
+  const bulkAdd = useStore((s) => s.bulkAdd);
   const data = useCurrentData();
   const other = useOtherData();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
 
   const notifyFlags = readFlags(NOTIFY_KEY, notifications.map((n) => n.id));
   const appearanceFlags = readFlags(APPEARANCE_KEY, appearance.map((a) => a.id));
+
+  const importRetro = async () => {
+    buzz(30);
+    setImporting(true);
+    try {
+      const fetched = await Promise.allSettled(
+        RETRO_IMPORT.map(async (item) => ({ item, game: await getGameBySlug(item.slug) })),
+      );
+      const items = fetched.flatMap((r) =>
+        r.status === "fulfilled"
+          ? [
+              {
+                game: r.value.game,
+                status: r.value.item.status,
+                hours: r.value.item.hours,
+                legacy: r.value.item.status === "completed",
+              },
+            ]
+          : [],
+      );
+      if (!items.length) {
+        toast.error("تعذر جلب الألعاب — حاول مرة أخرى");
+        return;
+      }
+      bulkAdd(items);
+      buzz([40, 60, 40]);
+      toast.success(`تم استيراد ${items.length} لعبة إلى الأرشيف التاريخي 🗄️`);
+    } catch {
+      toast.error("فشل الاستيراد");
+    } finally {
+      setImporting(false);
+    }
+  };
+
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify({ users }, null, 2)], { type: "application/json" });
