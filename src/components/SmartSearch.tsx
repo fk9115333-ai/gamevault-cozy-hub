@@ -48,6 +48,13 @@ export function SmartSearch() {
     navigate({ to: "/game/$id", params: { id: String(g.id) } });
   };
 
+  const submit = () => {
+    const term = q.trim();
+    if (term.length < 2) return;
+    setOpen(false);
+    navigate({ to: "/search", search: { q: term } });
+  };
+
   const add = (g: RawgGame, status: Status) => {
     buzz(status === "completed" ? [40, 60, 40] : 20);
     addGame(g, status);
@@ -75,11 +82,21 @@ export function SmartSearch() {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              submit();
+            }
+            if (e.key === "Escape") setOpen(false);
+          }}
+          enterKeyHint="search"
+          type="search"
           placeholder="ابحث عن أي لعبة… اكتب حرفين فقط"
-          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
         />
         {isFetching && <Loader2 className="size-4 animate-spin text-primary" />}
       </div>
+
 
       {open && q.trim().length >= 2 && (
         <div className="absolute inset-x-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-3xl glass p-2">
