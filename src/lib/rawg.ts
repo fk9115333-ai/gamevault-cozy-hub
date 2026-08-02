@@ -230,8 +230,9 @@ export const getRecommended = async (
   );
 
   const [dynamic, curated] = await Promise.all([dynamicRequest, curatedRequest]);
-  const merged = [...dynamic, ...curated];
+  const merged = [...curated, ...dynamic];
   const unique = new Map<number, RawgGame>();
   for (const game of merged) if (excludeOwned(game) && !unique.has(game.id)) unique.set(game.id, game);
-  return [...unique.values()].slice(0, 18);
+  return [...unique.values()].sort(byPrestige).slice(0, 18);
 };
+
