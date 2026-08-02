@@ -143,9 +143,10 @@ const emptyUser = (name: string, avatar: string, bio: string): UserData => ({
   ],
 });
 
-/** لعبة لم تصدر بعد ⇒ تُضاف دائمًا إلى «المرتقبة» */
+/** لعبة لم تصدر بعد (تاريخ مستقبلي أو بلا تاريخ معلن) ⇒ تُضاف دائمًا إلى «المرتقبة» */
 export const isFutureRelease = (released: string | null | undefined) =>
-  !!released && new Date(released).getTime() > Date.now();
+  !released || new Date(released).getTime() > Date.now();
+
 
 export const resolveStatus = (released: string | null | undefined, wanted: Status): Status =>
   isFutureRelease(released) ? "hype" : wanted;
