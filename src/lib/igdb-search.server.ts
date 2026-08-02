@@ -36,7 +36,7 @@ export async function searchIgdb(q: string, limit = 12): Promise<GameDTO[]> {
   const batches = await Promise.all([
     ...queries.map((query) => run(query, BASE_WHERE)),
     // إعلانات مبكرة بلا منصات محددة
-    run(raw, `category = (0,8,9,10) & version_parent = null & first_release_date = null`, 15),
+    run(raw, `game_type = (0,8,9,10) & version_parent = null & first_release_date = null`, 15),
   ]);
 
   const unique = new Map<number, GameDTO>();

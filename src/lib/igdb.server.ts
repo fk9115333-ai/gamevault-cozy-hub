@@ -19,7 +19,7 @@ const FIELDS = [
   "slug",
   "name",
   "first_release_date",
-  "category",
+  "game_type",
   "summary",
   "storyline",
   "url",
@@ -50,7 +50,7 @@ export type IgdbRaw = {
   slug: string;
   name: string;
   first_release_date?: number;
-  category?: number;
+  game_type?: number;
   summary?: string;
   url?: string;
   rating?: number;
@@ -135,7 +135,7 @@ const img = (id: string | undefined, size: string) =>
 export const escapeSearch = (q: string) => q.replace(/["\\]/g, " ").trim();
 
 /** فلتر ثابت: ألعاب كاملة على منصات PC/كونسول فقط، بلا نسخ فرعية */
-export const BASE_WHERE = `category = (${GAME_CATEGORIES.join(",")}) & version_parent = null & platforms = (${PLATFORM_IDS.join(",")})`;
+export const BASE_WHERE = `game_type = (${GAME_CATEGORIES.join(",")}) & version_parent = null & platforms = (${PLATFORM_IDS.join(",")})`;
 
 export function toDTO(g: IgdbRaw, hours?: number): GameDTO {
   const platforms = (g.platforms ?? []).filter((p) => !MOBILE_PLATFORM_IDS.has(p.id));
