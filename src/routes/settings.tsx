@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useStore, useCurrentData, useOtherData, type UserId } from "@/lib/store";
 import { SectionTitle } from "@/components/ui-bits";
 import { AvatarPicker } from "@/components/AvatarPicker";
@@ -10,7 +10,20 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { buzz } from "@/lib/haptics";
-import { Download, Upload, Bell, Users, Palette, UserCog, HardDrive, TriangleAlert } from "lucide-react";
+import { getGameBySlug } from "@/lib/rawg";
+import { RETRO_IMPORT } from "@/lib/retro-import";
+import {
+  Download,
+  Upload,
+  Bell,
+  Users,
+  Palette,
+  UserCog,
+  HardDrive,
+  TriangleAlert,
+  Archive,
+  Loader2,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +36,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import type { ReactNode } from "react";
+
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
