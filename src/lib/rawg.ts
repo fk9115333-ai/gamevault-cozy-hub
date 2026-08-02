@@ -208,7 +208,7 @@ const franchiseMatches = (q: string) => {
   return FRANCHISE_TERMS.filter((f) => f.startsWith(n) || f.split(" ").some((w) => w.startsWith(n) && n.length >= 3)).slice(0, 2);
 };
 
-export const searchGames = async (q: string) => {
+export const searchGames = async (q: string, limit = 12) => {
   const queries = [...new Set([...expandQuery(q), ...franchiseMatches(q)])].slice(0, 4);
   const batches = await Promise.all(
     queries.map((query) =>
