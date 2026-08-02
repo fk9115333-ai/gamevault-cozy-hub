@@ -84,21 +84,85 @@ export const cleanList = (list: RawgGame[]) =>
 const hasSubstance = (g: RawgGame) =>
   !!g.background_image && ((g.added ?? 0) >= 200 || (g.metacritic ?? 0) >= 70 || (g.ratings_count ?? 0) >= 60);
 
-export const searchGames = (q: string) =>
-  rawg<{ results: RawgGame[] }>("/games", {
-    search: q,
-    page_size: 40,
-    search_precise: "true",
-    platforms: PLATFORMS,
-    parent_platforms: PARENT_PLATFORMS,
-    ordering: "-added",
-    exclude_collection: "true",
-    exclude_additions: "true",
-  }).then((d) => {
-    const clean = cleanList(d.results);
-    const strong = clean.filter(hasSubstance);
-    return (strong.length ? strong : clean).sort(byPrestige).slice(0, 12);
-  });
+/** اختصارات شائعة يكتبها اللاعبون */
+const ALIASES: [RegExp, string][] = [
+  [/\bre\s*(\d+)\b/i, "resident evil $1"],
+  [/\bre\b/i, "resident evil"],
+  [/\bgta\b/i, "grand theft auto"],
+  [/\bac\b/i, "assassin's creed"],
+  [/\bcod\b/i, "call of duty"],
+  [/\bmgs\b/i, "metal gear solid"],
+  [/\bgow\b/i, "god of war"],
+  [/\btlou\b/i, "the last of us"],
+  [/\bdmc\b/i, "devil may cry"],
+  [/\brdr\s*(\d+)?\b/i, "red dead redemption $1"],
+  [/\bff\s*(\d+|[ivx]+)\b/i, "final fantasy $1"],
+  [/\bbg\s*3\b/i, "baldur's gate 3"],
+  [/\bmk\b/i, "mortal kombat"],
+  [/\bnfs\b/i, "need for speed"],
+];
+
+const expandQuery = (q: string) => {
+  const raw = q.trim();
+  const variants = new Set<string>([raw]);
+  for (const [re, rep] of ALIASES) {
+    if (re.test(raw)) variants.add(raw.replace(re, rep).replace(/\s+/g, " ").trim());
+  }
+  return [...variants].slice(0, 3);
+};
+
+const norm = (s: string) =>
+  s.toLowerCase().replace(/['’:\-–—.,!?]/g, "").replace(/\s+/g, " ").trim();
+
+/** درجة تطابق ضبابية: بادئة > احتواء > تطابق كلمات جزئي */
+const matchScore = (name: string, queries: string[]) => {
+  const n = norm(name);
+  let best = 0;
+  for (const q of queries) {
+    const nq = norm(q);
+    if (!nq) continue;
+    if (n === nq) best = Math.max(best, 1000);
+    else if (n.startsWith(nq)) best = Math.max(best, 800);
+    else if (n.includes(nq)) best = Math.max(best, 600);
+    const tokens = nq.split(" ").filter(Boolean);
+    const hits = tokens.filter((t) => n.split(" ").some((w) => w.startsWith(t))).length;
+    if (tokens.length) best = Math.max(best, Math.round((hits / tokens.length) * 500));
+  }
+  return best;
+};
+
+export const searchGames = async (q: string) => {
+  const queries = expandQuery(q);
+  const batches = await Promise.all(
+    queries.map((query) =>
+      rawg<{ results: RawgGame[] }>("/games", {
+        search: query,
+        page_size: 40,
+        platforms: PLATFORMS,
+        parent_platforms: PARENT_PLATFORMS,
+        ordering: "-added",
+        exclude_collection: "true",
+        exclude_additions: "true",
+      })
+        .then((d) => d.results)
+        .catch(() => [] as RawgGame[]),
+    ),
+  );
+
+  const unique = new Map<number, RawgGame>();
+  for (const g of batches.flat()) if (!unique.has(g.id)) unique.set(g.id, g);
+
+  const clean = cleanList([...unique.values()]);
+  const strong = clean.filter(hasSubstance);
+  const pool = strong.length ? strong : clean;
+
+  return pool
+    .map((g) => ({ g, s: matchScore(g.name, queries) }))
+    .filter((x) => x.s > 0)
+    .sort((a, b) => b.s + prestige(b.g) / 60 - (a.s + prestige(a.g) / 60))
+    .slice(0, 12)
+    .map((x) => x.g);
+};
 
 
 export const getGame = (id: string | number) => rawg<RawgGame>(`/games/${id}`);
