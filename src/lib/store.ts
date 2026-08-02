@@ -115,6 +115,9 @@ type State = {
   setUser: (u: UserId) => void;
   chooseProfile: (u: UserId) => void;
   addGame: (game: RawgGame, status: Status) => void;
+  /** استيراد جماعي: ألعاب مختومة قديمًا بساعاتها العالمية أو إصدارات مرتقبة */
+  bulkAdd: (items: { game: RawgGame; status: Status; hours?: number; legacy?: boolean }[]) => void;
+
   updateGame: (id: number, patch: Partial<GameEntry>) => void;
   removeGame: (id: number) => void;
   toggleFavorite: (id: number) => void;
