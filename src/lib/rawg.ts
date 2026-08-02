@@ -239,11 +239,16 @@ export const searchGames = async (q: string, limit = 12) => {
   );
 
   const franchiseHint = franchiseMatches(q);
+  const nq = norm(q);
 
   return pool
     .map((g) => {
+      const n = norm(g.name);
       const s = matchScore(g.name, queries);
+      // تطابق حرفي أو بادئة حرفية لما كتبه المستخدم يتصدّر دائمًا (أسلوب Steam)
+      const exact = n === nq ? 100000 : n.startsWith(nq) ? 40000 : 0;
       const bonus =
+        exact +
         (MASTER_FRANCHISES.test(g.name) ? 400 : 0) +
         (franchiseHint.some((f) => norm(g.name).startsWith(norm(f))) ? 500 : 0) +
         (isUnreleased(g) && MASTER_FRANCHISES.test(g.name) ? 200 : 0);
@@ -251,7 +256,7 @@ export const searchGames = async (q: string, limit = 12) => {
     })
     .filter((x) => x.base > 0)
     .sort((a, b) => b.s + prestige(b.g) / 20 - (a.s + prestige(a.g) / 20))
-    .slice(0, 12)
+    .slice(0, limit)
     .map((x) => x.g);
 };
 
