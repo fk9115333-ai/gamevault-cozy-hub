@@ -131,8 +131,85 @@ const matchScore = (name: string, queries: string[]) => {
   return best;
 };
 
+/** لعبة لم تصدر بعد (تاريخ مستقبلي أو TBA) */
+export const isUnreleased = (g: RawgGame) =>
+  !!g.tba || !g.released || new Date(g.released).getTime() > Date.now();
+
+/** لعبة مرتقبة مقبولة: ليست جوال صريحًا، ولها اسم أساسي */
+const isUpcomingCandidate = (g: RawgGame) => {
+  if (!isUnreleased(g)) return false;
+  if (!isBaseGame(g.name)) return false;
+  const platforms = g.platforms ?? [];
+  if (!platforms.length) return true; // إعلان مبكر بلا منصات محددة
+  return isCoreGame(g);
+};
+
+/** سلاسل كبرى تُقترح فور كتابة أول حروفها (Res → resident evil) */
+const FRANCHISE_TERMS = [
+  "resident evil",
+  "batman arkham",
+  "assassin's creed",
+  "grand theft auto",
+  "god of war",
+  "the last of us",
+  "ghost of tsushima",
+  "metal gear solid",
+  "final fantasy",
+  "silent hill",
+  "red dead redemption",
+  "call of duty",
+  "elden ring",
+  "dark souls",
+  "spider-man",
+  "horizon",
+  "uncharted",
+  "the witcher",
+  "cyberpunk 2077",
+  "death stranding",
+  "devil may cry",
+  "monster hunter",
+  "mortal kombat",
+  "tomb raider",
+  "far cry",
+  "battlefield",
+  "hogwarts legacy",
+  "baldur's gate",
+  "starfield",
+  "sekiro",
+  "bloodborne",
+  "days gone",
+  "alan wake",
+  "returnal",
+  "pragmata",
+  "mass effect",
+  "fallout",
+  "the elder scrolls",
+  "doom",
+  "halo",
+  "gears of war",
+  "persona",
+  "nier",
+  "hitman",
+  "dishonored",
+  "control",
+  "bioshock",
+  "borderlands",
+  "diablo",
+  "forza",
+  "gran turismo",
+  "street fighter",
+  "tekken",
+];
+
+/** يوسّع البادئات القصيرة إلى أسماء السلاسل الكبرى */
+const franchiseMatches = (q: string) => {
+  const n = norm(q);
+  if (n.length < 2) return [];
+  return FRANCHISE_TERMS.filter((f) => f.startsWith(n) || f.split(" ").some((w) => w.startsWith(n) && n.length >= 3)).slice(0, 2);
+};
+
 export const searchGames = async (q: string) => {
-  const queries = expandQuery(q);
+  const queries = [...new Set([...expandQuery(q), ...franchiseMatches(q)])].slice(0, 4);
   const batches = await Promise.all(
     queries.map((query) =>
       rawg<{ results: RawgGame[] }>("/games", {
@@ -152,17 +229,32 @@ export const searchGames = async (q: string) => {
   const unique = new Map<number, RawgGame>();
   for (const g of batches.flat()) if (!unique.has(g.id)) unique.set(g.id, g);
 
-  const clean = cleanList([...unique.values()]);
-  const strong = clean.filter(hasSubstance);
-  const pool = strong.length ? strong : clean;
+  const all = [...unique.values()];
+  const clean = cleanList(all);
+  const upcoming = all.filter((g) => isUpcomingCandidate(g) && !clean.some((c) => c.id === g.id));
+
+  // نستبعد الحشو المغمور إلا إذا كان سلسلة كبرى أو لعبة مرتقبة
+  const pool = [...clean, ...upcoming].filter(
+    (g) => hasSubstance(g) || MASTER_FRANCHISES.test(g.name) || isUnreleased(g),
+  );
+
+  const franchiseHint = franchiseMatches(q);
 
   return pool
-    .map((g) => ({ g, s: matchScore(g.name, queries) }))
-    .filter((x) => x.s > 0)
-    .sort((a, b) => b.s + prestige(b.g) / 60 - (a.s + prestige(a.g) / 60))
+    .map((g) => {
+      const s = matchScore(g.name, queries);
+      const bonus =
+        (MASTER_FRANCHISES.test(g.name) ? 400 : 0) +
+        (franchiseHint.some((f) => norm(g.name).startsWith(norm(f))) ? 500 : 0) +
+        (isUnreleased(g) && MASTER_FRANCHISES.test(g.name) ? 200 : 0);
+      return { g, s: s + bonus, base: s };
+    })
+    .filter((x) => x.base > 0)
+    .sort((a, b) => b.s + prestige(b.g) / 20 - (a.s + prestige(a.g) / 20))
     .slice(0, 12)
     .map((x) => x.g);
 };
+
 
 
 export const getGame = (id: string | number) => rawg<RawgGame>(`/games/${id}`);
