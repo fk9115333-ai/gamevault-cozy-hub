@@ -181,7 +181,7 @@ export async function timeToBeat(ids: number[]): Promise<Map<number, number>> {
   if (!ids.length) return map;
   try {
     const rows = await igdb<{ game_id: number; normally?: number; completely?: number }[]>(
-      "game_time_to_beat",
+      "game_time_to_beats",
       `fields game_id,normally,completely; where game_id = (${ids.join(",")}); limit ${ids.length};`,
     );
     for (const r of rows) {
