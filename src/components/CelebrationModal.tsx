@@ -12,16 +12,23 @@ import { Clock, CalendarRange, Gauge, Trophy } from "lucide-react";
 export function CompletionCard({ game }: { game: GameEntry }) {
   const s = completionSummary(game);
 
-  const cells = [
-    { icon: Clock, label: "إجمالي اللعب", value: `${num(s.hours, 1)} ساعة` },
-    { icon: CalendarRange, label: "المدة المستغرقة", value: `${num(s.days ?? 1)} يوم` },
-    { icon: Gauge, label: "المعدل اليومي", value: `${num(s.dailyAvg ?? 0, 1)} ساعة` },
-    {
-      icon: Trophy,
-      label: "التقييم",
-      value: game.personalRating ? `${num(game.personalRating, 1)}/10` : "قيد التقييم",
-    },
-  ];
+  const rating = {
+    icon: Trophy,
+    label: "التقييم",
+    value: game.personalRating ? `${num(game.personalRating, 1)}/10` : "قيد التقييم",
+  };
+
+  const cells = s.legacy
+    ? [
+        { icon: Clock, label: "ساعات الختم", value: `${num(s.hours, 1)} ساعة` },
+        rating,
+      ]
+    : [
+        { icon: Clock, label: "إجمالي اللعب", value: `${num(s.hours, 1)} ساعة` },
+        { icon: CalendarRange, label: "المدة المستغرقة", value: `${num(s.days ?? 1)} يوم` },
+        { icon: Gauge, label: "المعدل اليومي", value: `${num(s.dailyAvg ?? 0, 1)} ساعة` },
+        rating,
+      ];
 
   return (
     <div className="space-y-3">
@@ -35,10 +42,12 @@ export function CompletionCard({ game }: { game: GameEntry }) {
         ))}
       </div>
 
-      <div className="rounded-2xl bg-secondary/40 px-4 py-3 text-center text-xs text-muted-foreground">
-        من {dayMonth(s.startedAt, "بداية غير مسجّلة")} إلى {dayMonth(s.completedAt, "اليوم")}
-        {s.sessions > 0 ? ` · ${num(s.sessions)} جلسة` : ""}
-      </div>
+      {!s.legacy && (
+        <div className="rounded-2xl bg-secondary/40 px-4 py-3 text-center text-xs text-muted-foreground">
+          من {dayMonth(s.startedAt, "بداية غير مسجّلة")} إلى {dayMonth(s.completedAt, "اليوم")}
+          {s.sessions > 0 ? ` · ${num(s.sessions)} جلسة` : ""}
+        </div>
+      )}
 
       <div className="rounded-2xl border-2 border-yellow-500/50 bg-secondary/30 px-4 py-3 text-center shadow-[0_0_20px_-8px_rgba(234,179,8,0.6)]">
         <p className="font-display text-base font-black gold-glow">
@@ -49,6 +58,7 @@ export function CompletionCard({ game }: { game: GameEntry }) {
     </div>
   );
 }
+
 
 export function CelebrationModal({
   game,
