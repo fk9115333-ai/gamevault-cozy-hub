@@ -119,7 +119,10 @@ export function SmartSearch() {
                 </p>
               </div>
               <div className="hidden shrink-0 gap-1 group-hover:flex md:flex">
-                {quickAdd.map((a) => (
+                {(isUnreleased(g)
+                  ? quickAdd.filter((a) => a.status === "hype")
+                  : quickAdd.filter((a) => a.status !== "hype")
+                ).map((a) => (
                   <Button
                     key={a.status}
                     size="sm"
@@ -135,6 +138,7 @@ export function SmartSearch() {
                   </Button>
                 ))}
               </div>
+
             </div>
           ))}
         </div>
