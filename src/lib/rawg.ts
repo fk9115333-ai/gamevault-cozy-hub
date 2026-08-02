@@ -64,22 +64,42 @@ export const isCoreGame = (g: RawgGame) => {
   );
 };
 
+/** سلاسل كبرى تُرفع دائمًا لأعلى نتائج البحث والتوصيات */
+const MASTER_FRANCHISES =
+  /\b(resident evil|metal gear|batman: ?arkham|arkham|god of war|the last of us|uncharted|horizon|spider-?man|ghost of tsushima|elden ring|dark souls|bloodborne|sekiro|final fantasy|silent hill|red dead|grand theft auto|gta|assassin'?s creed|far cry|cyberpunk|the witcher|mass effect|dragon age|halo|gears of war|doom|call of duty|battlefield|death stranding|hitman|tomb raider|dishonored|fallout|the elder scrolls|skyrim|hogwarts|baldur'?s gate|starfield|forza|it takes two|a plague tale|alan wake|control|returnal|ratchet|gran turismo|nier|persona|monster hunter|devil may cry|street fighter|tekken|mortal kombat|pragmata|silksong|days gone|infamous|bioshock|borderlands|diablo|stalker|kingdom come|expedition 33)\b/i;
+
+/** رتبة الجودة: السلاسل الكبرى ثم التقييم النقدي ثم الشعبية */
+const prestige = (g: RawgGame) =>
+  (MASTER_FRANCHISES.test(g.name) ? 100000 : 0) +
+  (g.metacritic ?? 0) * 200 +
+  Math.min(60000, g.added ?? 0);
+
+const byPrestige = (a: RawgGame, b: RawgGame) => prestige(b) - prestige(a);
+
 /** فلترة موحّدة: لعبة أساسية + منصات رئيسية */
 export const cleanList = (list: RawgGame[]) =>
   list.filter((g) => isBaseGame(g.name) && isCoreGame(g));
 
+/** يستبعد الحشو المغمور: بلا صورة وبلا جمهور ولا تقييم نقدي */
+const hasSubstance = (g: RawgGame) =>
+  !!g.background_image && ((g.added ?? 0) >= 200 || (g.metacritic ?? 0) >= 70 || (g.ratings_count ?? 0) >= 60);
 
 export const searchGames = (q: string) =>
   rawg<{ results: RawgGame[] }>("/games", {
     search: q,
-    page_size: 20,
+    page_size: 40,
     search_precise: "true",
     platforms: PLATFORMS,
     parent_platforms: PARENT_PLATFORMS,
     ordering: "-added",
     exclude_collection: "true",
     exclude_additions: "true",
-  }).then((d) => cleanList(d.results).slice(0, 12));
+  }).then((d) => {
+    const clean = cleanList(d.results);
+    const strong = clean.filter(hasSubstance);
+    return (strong.length ? strong : clean).sort(byPrestige).slice(0, 12);
+  });
+
 
 export const getGame = (id: string | number) => rawg<RawgGame>(`/games/${id}`);
 
