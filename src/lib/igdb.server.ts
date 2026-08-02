@@ -82,6 +82,7 @@ export type GameDTO = {
   rating: number;
   ratings_count?: number;
   added?: number;
+  hypes?: number;
   metacritic: number | null;
   playtime?: number;
   website?: string;
@@ -159,6 +160,7 @@ export function toDTO(g: IgdbRaw, hours?: number): GameDTO {
     rating: g.total_rating ? Number((g.total_rating / 20).toFixed(2)) : 0,
     ratings_count: g.total_rating_count ?? g.rating_count ?? 0,
     added: g.follows ?? g.total_rating_count ?? 0,
+    hypes: g.hypes ?? 0,
     metacritic: critic ? Math.round(critic) : null,
     ...(hours ? { playtime: hours } : {}),
     ...(g.websites?.[0]?.url || g.url ? { website: g.websites?.[0]?.url ?? g.url! } : {}),
