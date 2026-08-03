@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { GameEditDialog } from "@/components/GameEditDialog";
 
-
 const quickAdd: { status: Status; label: string }[] = [
   { status: "current", label: "قيد اللعب" },
   { status: "backlog", label: "الانتظار" },
@@ -29,7 +28,6 @@ export function SmartSearch() {
     editId ? (s.users[s.currentUser].entries.find((e) => e.id === editId) ?? null) : null,
   );
 
-  // استعلام فوري بأسلوب ستيم مع تهدئة خفيفة تمنع إغراق الشبكة
   useEffect(() => {
     const t = setTimeout(() => setDebounced(q.trim()), 160);
     return () => clearTimeout(t);
@@ -50,7 +48,6 @@ export function SmartSearch() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
 
   const pick = (g: RawgGame) => {
     setOpen(false);
@@ -106,7 +103,6 @@ export function SmartSearch() {
         />
         {isFetching && <Loader2 className="size-4 animate-spin text-primary" />}
       </div>
-
 
       {open && q.trim().length >= 2 && (
         <div className="absolute inset-x-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-3xl glass p-2">
@@ -174,7 +170,6 @@ export function SmartSearch() {
                   </Button>
                 ))}
               </div>
-
             </div>
           ))}
           {!!data?.length && (
