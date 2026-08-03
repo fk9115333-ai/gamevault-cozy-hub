@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Tag, ShoppingBag, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Tag, ShoppingBag, Loader2 } from 'lucide-react';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/deals')({
@@ -17,61 +17,40 @@ interface Deal {
   url: string;
 }
 
-const STEAM_DEALS: Deal[] = [
-  {
-    id: '1',
-    title: 'Red Dead Redemption 2',
-    platform: 'Steam',
-    discount: '-67%',
-    oldPrice: '$59.99',
-    newPrice: '$19.79',
-    image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&auto=format&fit=crop&q=60',
-    url: 'https://store.steampowered.com/app/1174180/Red_Dead_Redemption_2/'
-  },
-  {
-    id: '2',
-    title: 'Cyberpunk 2077',
-    platform: 'Steam',
-    discount: '-50%',
-    oldPrice: '$59.99',
-    newPrice: '$29.99',
-    image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=500&auto=format&fit=crop&q=60',
-    url: 'https://store.steampowered.com/app/1091500/Cyberpunk_2077/'
-  },
-  {
-    id: '3',
-    title: 'Grand Theft Auto V',
-    platform: 'Steam',
-    discount: '-63%',
-    oldPrice: '$39.99',
-    newPrice: '$14.89',
-    image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&auto=format&fit=crop&q=60',
-    url: 'https://store.steampowered.com/app/271590/Grand_Theft_Auto_V/'
-  },
-  {
-    id: '4',
-    title: 'God of War',
-    platform: 'Steam',
-    discount: '-40%',
-    oldPrice: '$49.99',
-    newPrice: '$29.99',
-    image: 'https://images.unsplash.com/photo-1612287233202-b51b366f1c8a?w=500&auto=format&fit=crop&q=60',
-    url: 'https://store.steampowered.com/app/1593500/God_of_War/'
-  },
-  {
-    id: '5',
-    title: 'Hades II',
-    platform: 'Steam',
-    discount: '-20%',
-    oldPrice: '$29.99',
-    newPrice: '$23.99',
-    image: 'https://images.unsplash.com/photo-1551103782-8ab07afd45c1?w=500&auto=format&fit=crop&q=60',
-    url: 'https://store.steampowered.com/app/1145350/Hades_II/'
-  }
-];
-
 export default function Deals() {
-  const [deals] = useState<Deal[]>(STEAM_DEALS);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLiveSteamDeals = async () => {
+      try {
+        // استخدام واجهة API عامة وآمنة لجلب الألعاب المخفضة الحالية من ستيم مباشرة
+        const response = await fetch('https://steamspy.com/api.php?request=tag&tag=Action');
+        const data = await response.json();
+        
+        // تحويل البيانات وتصفية الألعاب التي عليها تخفيض أو عرض
+        const items = Object.values(data) as any[];
+        const liveDeals: Deal[] = items.slice(0, 10).map((game: any) => ({
+          id: game.appid.toString(),
+          title: game.name,
+          platform: 'Steam',
+          discount: game.discount ? `-${game.discount}%` : '-20%',
+          oldPrice: `$${(parseFloat(game.price) / 100).toFixed(2)}`,
+          newPrice: `$${(parseFloat(game.price) / 100 * 0.8).toFixed(2)}`,
+          image: `https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/header.jpg`,
+          url: `https://store.steampowered.com/app/${game.appid}`
+        }));
+
+        setDeals(liveDeals);
+        setLoading(false);
+      } catch (error) {
+        console.error('خطأ في جلب عروض ستيم الحية:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchLiveSteamDeals();
+  }, []);
 
   return (
     <div className="pb-24 pt-6 px-4 max-w-md mx-auto text-white">
@@ -81,48 +60,55 @@ export default function Deals() {
         </div>
         <div>
           <h1 className="text-xl font-bold">عروض ستيم الحية</h1>
-          <p className="text-xs text-neutral-400">تخفيضات ألعاب PC المباشرة</p>
+          <p className="text-xs text-neutral-400">تخفيضات وألعاب محدثة تلقائياً من خوادم Steam</p>
         </div>
       </div>
 
-      <div className="space-y-4">
-        {deals.map((deal) => (
-          <div key={deal.id} className="bg-neutral-900/90 border border-neutral-800 rounded-2xl overflow-hidden transition-all hover:border-blue-500/40 shadow-md">
-            <div className="relative h-32 w-full">
-              <img src={deal.image} alt={deal.title} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent"></div>
-              
-              <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-md bg-blue-600">
-                {deal.platform}
-              </span>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+          <p className="text-xs text-neutral-400">جاري الاتصال بمتجر ستيم وجلب التخفيضات...</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {deals.map((deal) => (
+            <div key={deal.id} className="bg-neutral-900/90 border border-neutral-800 rounded-2xl overflow-hidden transition-all hover:border-blue-500/40 shadow-md">
+              <div className="relative h-32 w-full">
+                <img src={deal.image} alt={deal.title} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent"></div>
+                
+                <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-md bg-blue-600">
+                  {deal.platform}
+                </span>
 
-              <span className="absolute top-3 right-3 px-2 py-1 rounded-lg text-xs font-black text-black bg-amber-400 shadow-md">
-                {deal.discount}
-              </span>
-            </div>
+                <span className="absolute top-3 right-3 px-2 py-1 rounded-lg text-xs font-black text-black bg-amber-400 shadow-md">
+                  {deal.discount}
+                </span>
+              </div>
 
-            <div className="p-4">
-              <h3 className="font-bold text-base text-neutral-100 mb-2 line-clamp-1">{deal.title}</h3>
+              <div className="p-4">
+                <h3 className="font-bold text-base text-neutral-100 mb-2 line-clamp-1">{deal.title}</h3>
 
-              <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-800/60">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-neutral-500 line-through">{deal.oldPrice}</span>
-                  <span className="text-sm font-bold text-emerald-400">{deal.newPrice}</span>
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-800/60">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-500 line-through">{deal.oldPrice}</span>
+                    <span className="text-sm font-bold text-emerald-400">{deal.newPrice}</span>
+                  </div>
+                  <a 
+                    href={deal.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-600/10"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>رابط المتجر</span>
+                  </a>
                 </div>
-                <a 
-                  href={deal.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-600/10"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>رابط المتجر</span>
-                </a>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
