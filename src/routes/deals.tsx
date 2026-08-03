@@ -24,24 +24,27 @@ export default function Deals() {
   useEffect(() => {
     const fetchLiveSteamDeals = async () => {
       try {
-        // استخدام واجهة API عامة وآمنة لجلب الألعاب المخفضة الحالية من ستيم مباشرة
-        const response = await fetch('https://steamspy.com/api.php?request=tag&tag=Action');
+        // استخدام وسيط آمن يتجاوز حظر الـ CORS لجلب بيانات ستيم الحية
+        const proxyUrl = 'https://api.allorigins.win/raw?url=';
+        const steamUrl = encodeURIComponent('https://store.steampowered.com/api/featuredcategories/?l=arabic');
+        
+        const response = await fetch(proxyUrl + steamUrl);
         const data = await response.json();
         
-        // تحويل البيانات وتصفية الألعاب التي عليها تخفيض أو عرض
-        const items = Object.values(data) as any[];
-        const liveDeals: Deal[] = items.slice(0, 10).map((game: any) => ({
-          id: game.appid.toString(),
-          title: game.name,
+        const specials = data.specials?.items || [];
+        
+        const steamDeals: Deal[] = specials.map((item: any) => ({
+          id: item.id.toString(),
+          title: item.name,
           platform: 'Steam',
-          discount: game.discount ? `-${game.discount}%` : '-20%',
-          oldPrice: `$${(parseFloat(game.price) / 100).toFixed(2)}`,
-          newPrice: `$${(parseFloat(game.price) / 100 * 0.8).toFixed(2)}`,
-          image: `https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/header.jpg`,
-          url: `https://store.steampowered.com/app/${game.appid}`
+          discount: `-${item.discount_percent}%`,
+          oldPrice: `$${(item.original_price / 100).toFixed(2)}`,
+          newPrice: `$${(item.final_price / 100).toFixed(2)}`,
+          image: item.large_capsule_image || item.header_image,
+          url: `https://store.steampowered.com/app/${item.id}`
         }));
 
-        setDeals(liveDeals);
+        setDeals(steamDeals);
         setLoading(false);
       } catch (error) {
         console.error('خطأ في جلب عروض ستيم الحية:', error);
@@ -60,14 +63,14 @@ export default function Deals() {
         </div>
         <div>
           <h1 className="text-xl font-bold">عروض ستيم الحية</h1>
-          <p className="text-xs text-neutral-400">تخفيضات وألعاب محدثة تلقائياً من خوادم Steam</p>
+          <p className="text-xs text-neutral-400">تخفيضات ألعاب PC المحدثة تلقائياً</p>
         </div>
       </div>
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-          <p className="text-xs text-neutral-400">جاري الاتصال بمتجر ستيم وجلب التخفيضات...</p>
+          <p className="text-xs text-neutral-400">جاري جلب أحدث تخفيضات ستيم الحية...</p>
         </div>
       ) : (
         <div className="space-y-4">
