@@ -12,8 +12,6 @@ import {
   Clock,
   Plus,
   Swords,
-  Search,
-  Loader2,
 } from "lucide-react";
 import { useCurrentData, useOtherData, useStore, type GameEntry } from "@/lib/store";
 import { activityIcon, gameOfMonth, memoryBox, computeStats, computeLevel } from "@/lib/stats";
@@ -30,7 +28,6 @@ import { getRecommended } from "@/lib/rawg";
 import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
 import heroFallback from "@/assets/hero-fallback.jpg";
-
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -56,7 +53,6 @@ const QUOTES = [
   "«جلسة وحدة اليوم أفضل من خطة كاملة بكرة»",
 ];
 
-/** دقائق اللعب خلال آخر 7 أيام */
 const weekMinutes = (entries: { legacy?: boolean; sessions: { date: string; minutes: number }[] }[]) => {
   const from = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
   return entries
@@ -76,26 +72,6 @@ function Dashboard() {
   const hero = data.entries.find((e) => e.status === "current") ?? null;
   const [reviewed, setReviewed] = useState<GameEntry | null>(null);
 
-  // حقل البحث المباشر المحدث لـ ستيم
-  const [searchTerm, setSearchTerm] = useState("");
-  const { data: searchResults = [], isFetching: isSearching } = useQuery({
-    queryKey: ["home-steam-search", searchTerm],
-    queryFn: async () => {
-      if (!searchTerm || searchTerm.trim().length < 2) return [];
-      const res = await fetch(`https://www.cheapshark.com/api/1.0/deals?storeID=1&title=${encodeURIComponent(searchTerm)}&pageSize=5`);
-      const results = await res.json();
-      return results.map((item: any) => ({
-        id: item.dealID,
-        name: item.title,
-        thumb: item.thumb,
-        price: `$${item.salePrice}`,
-        url: `https://store.steampowered.com/app/${item.steamAppID || '1174180'}`
-      }));
-    },
-    enabled: searchTerm.trim().length >= 2,
-  });
-
-  /** أنواع الألعاب المكتملة — أساس التوصيات */
   const topGenres = useMemo(() => {
     const count = new Map<string, number>();
     for (const e of data.entries.filter((x) => x.status === "completed"))
@@ -106,7 +82,6 @@ function Dashboard() {
       .map(([g]) => g.toLowerCase().replace(/\s+/g, "-"));
   }, [data.entries]);
 
-  /** كل لعبة مملوكة مستبعدة، بما فيها اللعب الحالي والانتظار والمكتملة. */
   const ownedIds = useMemo(() => data.entries.map((entry) => entry.id), [data.entries]);
   const ownedNames = useMemo(() => data.entries.map((entry) => entry.name), [data.entries]);
 
@@ -148,7 +123,6 @@ function Dashboard() {
     return Math.round((mins / 60) * 10) / 10;
   }, [data.entries]);
 
-  /** تحدي الأسبوع بين الأخوين */
   const showdown = useMemo(() => {
     const mine = weekMinutes(data.entries) / 60;
     const theirs = weekMinutes(other.entries) / 60;
@@ -199,47 +173,6 @@ function Dashboard() {
 
   return (
     <div className="space-y-5">
-      
-      {/* شريط البحث الموحد والمنسق بمتجر ستيم */}
-      <div className="relative w-full">
-        <div className="flex items-center gap-2 rounded-2xl glass px-4 py-3 border border-border">
-          <Search className="size-4 shrink-0 text-muted-foreground" />
-          <input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="ابحث عن أي لعبة في ستيم..."
-            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground text-foreground"
-          />
-          {isSearching && <Loader2 className="size-4 animate-spin text-primary" />}
-        </div>
-
-        {searchTerm.trim().length >= 2 && (
-          <div className="absolute left-0 right-0 mt-2 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden z-50">
-            {isSearching ? (
-              <div className="p-4 text-center text-xs text-muted-foreground">جاري البحث في ستيم...</div>
-            ) : searchResults?.length === 0 ? (
-              <div className="p-4 text-center text-xs text-muted-foreground">لا توجد نتائج مطابقة</div>
-            ) : (
-              searchResults?.map((game: any) => (
-                <a
-                  key={game.id}
-                  href={game.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between p-3 hover:bg-secondary/60 border-b border-border/50 last:border-none transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <img src={game.thumb} alt={game.name} className="w-12 h-9 object-cover rounded-lg" />
-                    <span className="text-sm font-bold text-foreground line-clamp-1">{game.name}</span>
-                  </div>
-                  <span className="text-xs font-bold text-emerald-400">{game.price}</span>
-                </a>
-              ))
-            )}
-          </div>
-        )}
-      </div>
-
       {/* الترحيب + شريط الإحصائيات */}
       <section className="space-y-3">
         <div className="flex items-center gap-3">
