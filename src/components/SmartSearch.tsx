@@ -22,7 +22,6 @@ interface SteamGame {
   originalPrice?: string;
   discount?: string;
   image: string;
-  url: string;
 }
 
 export function SmartSearch() {
@@ -42,7 +41,7 @@ export function SmartSearch() {
     return () => clearTimeout(t);
   }, [q]);
 
-  // البحث المباشر عبر Steam / CheapShark API
+  // البحث الفوري وسحب البيانات
   const { data, isFetching } = useQuery({
     queryKey: ["steam-smart-search", debounced],
     queryFn: async () => {
@@ -56,7 +55,6 @@ export function SmartSearch() {
         originalPrice: `$${item.normalPrice}`,
         discount: item.savings > 0 ? `-${Math.round(parseFloat(item.savings))}%` : undefined,
         image: item.thumb,
-        url: `https://store.steampowered.com/app/${item.steamAppID || '1174180'}`
       })) as SteamGame[];
     },
     enabled: debounced.length >= 2,
@@ -72,10 +70,19 @@ export function SmartSearch() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // النقر على اللعبة ينقلك لصفحتها الداخلية داخل موقعك بدلاً من الخروج لستيم
   const pick = (g: SteamGame) => {
     setOpen(false);
     setQ("");
-    window.open(g.url, "_blank");
+    addGame({
+      id: g.id,
+      name: g.name,
+      background_image: g.image,
+      released: new Date().getFullYear().toString(),
+      metacritic: 85,
+      genres: [{ name: "Steam Game" }]
+    } as any, "backlog");
+    navigate({ to: "/game/$id", params: { id: String(g.id) } });
   };
 
   const submit = () => {
@@ -87,7 +94,6 @@ export function SmartSearch() {
 
   const add = (g: SteamGame, status: Status) => {
     buzz(status === "completed" ? [40, 60, 40] : 20);
-    // متوافقة تماماً مع بنية التخزين لديك
     addGame({
       id: g.id,
       name: g.name,
