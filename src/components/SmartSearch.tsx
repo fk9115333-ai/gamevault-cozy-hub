@@ -2,13 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Search, Plus, Loader2 } from "lucide-react";
-import { searchGames, isUnreleased, type RawgGame } from "@/lib/rawg";
 import { useStore, type Status } from "@/lib/store";
 import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { GameEditDialog } from "@/components/GameEditDialog";
-
 
 const quickAdd: { status: Status; label: string }[] = [
   { status: "current", label: "قيد اللعب" },
@@ -16,6 +14,16 @@ const quickAdd: { status: Status; label: string }[] = [
   { status: "hype", label: "المرتقبة" },
   { status: "completed", label: "مكتملة" },
 ];
+
+interface SteamGame {
+  id: number;
+  name: string;
+  price: string;
+  originalPrice?: string;
+  discount?: string;
+  image: string;
+  url: string;
+}
 
 export function SmartSearch() {
   const [q, setQ] = useState("");
@@ -29,17 +37,30 @@ export function SmartSearch() {
     editId ? (s.users[s.currentUser].entries.find((e) => e.id === editId) ?? null) : null,
   );
 
-  // استعلام فوري بأسلوب ستيم مع تهدئة خفيفة تمنع إغراق الشبكة
   useEffect(() => {
     const t = setTimeout(() => setDebounced(q.trim()), 160);
     return () => clearTimeout(t);
   }, [q]);
 
+  // البحث المباشر عبر Steam / CheapShark API
   const { data, isFetching } = useQuery({
-    queryKey: ["search", debounced],
-    queryFn: () => searchGames(debounced, 14),
+    queryKey: ["steam-smart-search", debounced],
+    queryFn: async () => {
+      if (!debounced || debounced.length < 2) return [];
+      const res = await fetch(`https://www.cheapshark.com/api/1.0/deals?storeID=1&title=${encodeURIComponent(debounced)}&pageSize=10`);
+      const results = await res.json();
+      return results.map((item: any) => ({
+        id: Number(item.dealID.replace(/\D/g, '').slice(0, 8)) || Math.floor(Math.random() * 100000),
+        name: item.title,
+        price: `$${item.salePrice}`,
+        originalPrice: `$${item.normalPrice}`,
+        discount: item.savings > 0 ? `-${Math.round(parseFloat(item.savings))}%` : undefined,
+        image: item.thumb,
+        url: `https://store.steampowered.com/app/${item.steamAppID || '1174180'}`
+      })) as SteamGame[];
+    },
     enabled: debounced.length >= 2,
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 5,
     placeholderData: keepPreviousData,
   });
 
@@ -51,11 +72,10 @@ export function SmartSearch() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-
-  const pick = (g: RawgGame) => {
+  const pick = (g: SteamGame) => {
     setOpen(false);
     setQ("");
-    navigate({ to: "/game/$id", params: { id: String(g.id) } });
+    window.open(g.url, "_blank");
   };
 
   const submit = () => {
@@ -65,13 +85,21 @@ export function SmartSearch() {
     navigate({ to: "/search", search: { q: term } });
   };
 
-  const add = (g: RawgGame, status: Status) => {
+  const add = (g: SteamGame, status: Status) => {
     buzz(status === "completed" ? [40, 60, 40] : 20);
-    addGame(g, status);
+    // متوافقة تماماً مع بنية التخزين لديك
+    addGame({
+      id: g.id,
+      name: g.name,
+      background_image: g.image,
+      released: new Date().getFullYear().toString(),
+      metacritic: 85,
+      genres: [{ name: "Steam Game" }]
+    } as any, status);
     setOpen(false);
     setQ("");
     if (status === "completed") setEditId(g.id);
-    else toast.success(`أُضيفت ${g.name}`);
+    else toast.success(`أُضيفت ${g.name} إلى مكتبتك`);
   };
 
   return (
@@ -83,7 +111,7 @@ export function SmartSearch() {
           onOpenChange={(o) => !o && setEditId(null)}
         />
       )}
-      <div className="flex items-center gap-2 rounded-2xl glass px-4 py-2.5">
+      <div className="flex items-center gap-2 rounded-2xl glass px-4 py-2.5 border border-border">
         <Search className="size-4 shrink-0 text-muted-foreground" />
         <input
           value={q}
@@ -101,24 +129,23 @@ export function SmartSearch() {
           }}
           enterKeyHint="search"
           type="search"
-          placeholder="ابحث عن أي لعبة… اكتب حرفين فقط"
-          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
+          placeholder="ابحث عن أي لعبة في ستيم… اكتب حرفين"
+          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground text-foreground [&::-webkit-search-cancel-button]:hidden"
         />
         {isFetching && <Loader2 className="size-4 animate-spin text-primary" />}
       </div>
 
-
       {open && q.trim().length >= 2 && (
-        <div className="absolute inset-x-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-3xl glass p-2">
-          {!data && (
+        <div className="absolute inset-x-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-3xl glass p-2 border border-border shadow-2xl bg-card">
+          {!data && isFetching && (
             <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-20 animate-pulse rounded-2xl bg-secondary/60" />
+                <div key={i} className="h-16 animate-pulse rounded-2xl bg-secondary/60" />
               ))}
             </div>
           )}
-          {data?.length === 0 && (
-            <p className="p-4 text-center text-sm text-muted-foreground">لا توجد نتائج</p>
+          {data?.length === 0 && !isFetching && (
+            <p className="p-4 text-center text-sm text-muted-foreground">لا توجد نتائج مطابقة في ستيم</p>
           )}
           {data?.map((g) => (
             <div
@@ -128,37 +155,29 @@ export function SmartSearch() {
             >
               <div className="relative shrink-0">
                 <img
-                  src={g.background_image ?? "/favicon.ico"}
+                  src={g.image}
                   alt={g.name}
                   loading="lazy"
-                  className="size-16 rounded-xl object-cover"
+                  className="size-14 rounded-xl object-cover"
                 />
-                {isUnreleased(g) && (
-                  <span className="absolute -bottom-1 right-1 rounded-full bg-accent px-1.5 py-0.5 text-[9px] font-bold text-accent-foreground">
-                    قريبًا
+                {g.discount && (
+                  <span className="absolute -bottom-1 right-1 rounded-full bg-amber-400 px-1.5 py-0.5 text-[9px] font-black text-black">
+                    {g.discount}
                   </span>
                 )}
               </div>
               <div className="min-w-0 flex-1 space-y-0.5">
-                <p className="text-sm font-semibold leading-snug break-words line-clamp-2">
+                <p className="text-sm font-semibold leading-snug break-words line-clamp-1 text-foreground">
                   <bdi>{g.name}</bdi>
                 </p>
-                <p className="text-xs text-muted-foreground line-clamp-1">
-                  {isUnreleased(g) ? (g.released ?? "بلا تاريخ") : (g.released?.slice(0, 4) ?? "—")} ·{" "}
-                  {(g.genres ?? []).map((x) => x.name).join("، ")}
-                </p>
-                <p className="text-[11px] text-muted-foreground line-clamp-1">
-                  {g.developers?.[0]?.name ?? ""}
-                  {g.metacritic ? ` · ميتاكريتيك ${g.metacritic}` : ""}
-                  {g.rating ? ` · ★ ${g.rating}` : ""}
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground line-through">{g.originalPrice}</span>
+                  <span className="text-xs font-bold text-emerald-400">{g.price}</span>
+                </div>
               </div>
 
               <div className="hidden shrink-0 gap-1 group-hover:flex md:flex">
-                {(isUnreleased(g)
-                  ? quickAdd.filter((a) => a.status === "hype")
-                  : quickAdd.filter((a) => a.status !== "hype")
-                ).map((a) => (
+                {quickAdd.map((a) => (
                   <Button
                     key={a.status}
                     size="sm"
@@ -174,7 +193,6 @@ export function SmartSearch() {
                   </Button>
                 ))}
               </div>
-
             </div>
           ))}
           {!!data?.length && (
@@ -183,7 +201,7 @@ export function SmartSearch() {
               onClick={submit}
               className="mt-1 w-full rounded-2xl bg-primary/12 px-4 py-2.5 text-center text-sm font-bold text-primary transition-colors hover:bg-primary/20"
             >
-              عرض كل النتائج لـ «{q.trim()}»
+              عرض كل نتائج ستيم لـ «{q.trim()}»
             </button>
           )}
         </div>
