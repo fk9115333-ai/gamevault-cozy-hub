@@ -22,37 +22,32 @@ export default function Deals() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLiveSteamDeals = async () => {
+    const fetchDeals = async () => {
       try {
-        // استخدام وسيط آمن يتجاوز حظر الـ CORS لجلب بيانات ستيم الحية
-        const proxyUrl = 'https://api.allorigins.win/raw?url=';
-        const steamUrl = encodeURIComponent('https://store.steampowered.com/api/featuredcategories/?l=arabic');
-        
-        const response = await fetch(proxyUrl + steamUrl);
+        // استخدام واجهة سريعة ومباشرة لجلب ألعاب وتخفيضات PC الحية
+        const response = await fetch('https://www.cheapshark.com/api/1.0/deals?storeID=1&upperPrice=30&pageSize=10');
         const data = await response.json();
         
-        const specials = data.specials?.items || [];
-        
-        const steamDeals: Deal[] = specials.map((item: any) => ({
-          id: item.id.toString(),
-          title: item.name,
+        const liveDeals: Deal[] = data.map((item: any) => ({
+          id: item.dealID,
+          title: item.title,
           platform: 'Steam',
-          discount: `-${item.discount_percent}%`,
-          oldPrice: `$${(item.original_price / 100).toFixed(2)}`,
-          newPrice: `$${(item.final_price / 100).toFixed(2)}`,
-          image: item.large_capsule_image || item.header_image,
-          url: `https://store.steampowered.com/app/${item.id}`
+          discount: `-${Math.round(parseFloat(item.savings))}%`,
+          oldPrice: `$${item.normalPrice}`,
+          newPrice: `$${item.salePrice}`,
+          image: item.thumb,
+          url: `https://store.steampowered.com/app/${item.steamAppID || '1174180'}`
         }));
 
-        setDeals(steamDeals);
+        setDeals(liveDeals);
         setLoading(false);
       } catch (error) {
-        console.error('خطأ في جلب عروض ستيم الحية:', error);
+        console.error('خطأ في جلب العروض:', error);
         setLoading(false);
       }
     };
 
-    fetchLiveSteamDeals();
+    fetchDeals();
   }, []);
 
   return (
@@ -63,14 +58,14 @@ export default function Deals() {
         </div>
         <div>
           <h1 className="text-xl font-bold">عروض ستيم الحية</h1>
-          <p className="text-xs text-neutral-400">تخفيضات ألعاب PC المحدثة تلقائياً</p>
+          <p className="text-xs text-neutral-400">تخفيضات الألعاب المحدثة مباشرة</p>
         </div>
       </div>
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-          <p className="text-xs text-neutral-400">جاري جلب أحدث تخفيضات ستيم الحية...</p>
+          <p className="text-xs text-neutral-400">جاري تحميل أحدث العروض الحية...</p>
         </div>
       ) : (
         <div className="space-y-4">
