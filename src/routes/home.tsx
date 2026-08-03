@@ -1,4 +1,5 @@
-import { useState } from "react";
+Home
+
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import {
@@ -22,12 +23,13 @@ import { Rail, PosterCard } from "@/components/Rail";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getRecommended } from "@/lib/rawg";
 import { buzz } from "@/lib/haptics";
 import { toast } from "sonner";
 import heroFallback from "@/assets/hero-fallback.jpg";
+
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -53,6 +55,7 @@ const QUOTES = [
   "«جلسة وحدة اليوم أفضل من خطة كاملة بكرة»",
 ];
 
+/** دقائق اللعب خلال آخر 7 أيام */
 const weekMinutes = (entries: { legacy?: boolean; sessions: { date: string; minutes: number }[] }[]) => {
   const from = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
   return entries
@@ -67,11 +70,14 @@ function Dashboard() {
   const other = useOtherData();
   const users = useStore((s) => s.users);
   const currentUser = useStore((s) => s.currentUser);
+  const updateGame = useStore((s) => s.updateGame);
   const addGame = useStore((s) => s.addGame);
+
 
   const hero = data.entries.find((e) => e.status === "current") ?? null;
   const [reviewed, setReviewed] = useState<GameEntry | null>(null);
 
+  /** أنواع الألعاب المكتملة — أساس التوصيات */
   const topGenres = useMemo(() => {
     const count = new Map<string, number>();
     for (const e of data.entries.filter((x) => x.status === "completed"))
@@ -82,6 +88,7 @@ function Dashboard() {
       .map(([g]) => g.toLowerCase().replace(/\s+/g, "-"));
   }, [data.entries]);
 
+  /** كل لعبة مملوكة مستبعدة، بما فيها اللعب الحالي والانتظار والمكتملة. */
   const ownedIds = useMemo(() => data.entries.map((entry) => entry.id), [data.entries]);
   const ownedNames = useMemo(() => data.entries.map((entry) => entry.name), [data.entries]);
 
@@ -123,6 +130,7 @@ function Dashboard() {
     return Math.round((mins / 60) * 10) / 10;
   }, [data.entries]);
 
+  /** تحدي الأسبوع بين الأخوين */
   const showdown = useMemo(() => {
     const mine = weekMinutes(data.entries) / 60;
     const theirs = weekMinutes(other.entries) / 60;
@@ -155,7 +163,7 @@ function Dashboard() {
   const [quoteIdx, setQuoteIdx] = useState(0);
   useEffect(() => setQuoteIdx(new Date().getDate() % QUOTES.length), []);
   const quote = QUOTES[quoteIdx]!;
-
+  /** بانر سينمائي: صورة اللعبة الحالية، وإلا كولاج من المقترحات، وإلا صورة احتياطية */
   const bannerImages = useMemo(() => {
     if (hero?.image) return [hero.image];
     const pool = [
@@ -164,7 +172,6 @@ function Dashboard() {
     ].filter((x): x is string => !!x);
     return pool.slice(0, 3).length === 3 ? pool.slice(0, 3) : pool.slice(0, 1);
   }, [hero, data.entries, trending]);
-
   const quick = [
     { icon: Trophy, label: "مكتملة", value: num(stats.completed) },
     { icon: Zap, label: "المستوى", value: num(level) },
@@ -236,6 +243,7 @@ function Dashboard() {
                 entry={hero}
                 trigger={
                   <Button className="h-12 w-fit rounded-2xl border-2 border-yellow-300/70 bg-primary px-6 font-display text-base font-black text-primary-foreground shadow-[0_0_35px_-4px_rgba(234,179,8,0.95)] hover:bg-primary/90">
+
                     <PlayCircle className="size-4" /> تسجيل جلسة
                   </Button>
                 }
@@ -288,6 +296,7 @@ function Dashboard() {
           ))}
         </Rail>
       )}
+
 
       {/* B — تحدي الأسبوع */}
       <section>
